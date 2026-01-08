@@ -466,6 +466,14 @@ button {
     margin: 1rem 0;
 }
 
+.share-note {
+    font-size: 0.9rem;
+    color: #666;
+    margin-top: 1.5rem;
+    text-align: center;
+    font-style: italic;
+}
+
 .social-buttons {
     display: flex;
     flex-direction: column;

@@ -117,8 +117,51 @@ const ExportManager = {
         }
     },
 
+    // Generate image blob for sharing
+    async generateImageBlob() {
+        const container = document.getElementById('poetry-canvas-container');
+
+        const canvas = await html2canvas(container, {
+            backgroundColor: '#ffffff',
+            scale: 2,
+            logging: false
+        });
+
+        return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+                resolve(blob);
+            }, 'image/png');
+        });
+    },
+
     // Show share modal
-    showShareModal() {
+    async showShareModal() {
+        // Check if Web Share API with files is supported
+        if (navigator.share && navigator.canShare) {
+            // Try to use native share directly
+            try {
+                const blob = await this.generateImageBlob();
+                const file = new File([blob], `blackout-poetry-${Date.now()}.png`, { type: 'image/png' });
+
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({
+                        files: [file],
+                        title: 'My Blackout Poetry',
+                        text: 'Check out my blackout poetry! Create your own at:',
+                        url: 'https://teegardenmath.github.io/dailybread'
+                    });
+                    return;
+                }
+            } catch (error) {
+                // If native share fails or is cancelled, fall through to modal
+                if (error.name === 'AbortError') {
+                    return; // User cancelled, do nothing
+                }
+                console.log('Native share not available, showing modal');
+            }
+        }
+
+        // Fallback to modal
         const modal = document.getElementById('share-modal');
         modal.classList.remove('hidden');
     },
@@ -129,39 +172,79 @@ const ExportManager = {
         modal.classList.add('hidden');
     },
 
-    // Share to Twitter
+    // Share to Twitter with image
     async shareToTwitter() {
-        const text = 'Check out my blackout poetry creation!';
-        const url = 'https://teegardenmath.github.io/dailybread';
-        const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`;
-
-        window.open(twitterUrl, '_blank');
-    },
-
-    // Share to Facebook
-    async shareToFacebook() {
-        const url = 'https://teegardenmath.github.io/dailybread';
-        const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
-
-        window.open(facebookUrl, '_blank');
-    },
-
-    // Copy link to clipboard
-    async copyLink() {
-        const url = 'https://teegardenmath.github.io/dailybread';
-
         try {
-            await navigator.clipboard.writeText(url);
-            alert('Link copied to clipboard!');
+            // Download the image first
+            const blob = await this.generateImageBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `blackout-poetry-${Date.now()}.png`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            // Then open Twitter with text
+            const text = 'Check out my blackout poetry! Create your own at:';
+            const siteUrl = 'https://teegardenmath.github.io/dailybread';
+            const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text + ' ' + siteUrl)}`;
+
+            setTimeout(() => {
+                window.open(twitterUrl, '_blank');
+                alert('Your image has been downloaded! Please attach it to your tweet.');
+            }, 500);
         } catch (error) {
-            // Fallback for older browsers
-            const input = document.createElement('input');
-            input.value = url;
-            document.body.appendChild(input);
-            input.select();
-            document.execCommand('copy');
-            document.body.removeChild(input);
-            alert('Link copied to clipboard!');
+            console.error('Error sharing to Twitter:', error);
+            alert('Failed to prepare share. Please try exporting as JPG instead.');
+        }
+    },
+
+    // Share to Facebook with image
+    async shareToFacebook() {
+        try {
+            // Download the image first
+            const blob = await this.generateImageBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `blackout-poetry-${Date.now()}.png`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            // Then open Facebook
+            const siteUrl = 'https://teegardenmath.github.io/dailybread';
+            const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(siteUrl)}`;
+
+            setTimeout(() => {
+                window.open(facebookUrl, '_blank');
+                alert('Your image has been downloaded! Please attach it to your Facebook post.');
+            }, 500);
+        } catch (error) {
+            console.error('Error sharing to Facebook:', error);
+            alert('Failed to prepare share. Please try exporting as JPG instead.');
+        }
+    },
+
+    // Copy link and download image
+    async copyLink() {
+        try {
+            // Download the image first
+            const blob = await this.generateImageBlob();
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = `blackout-poetry-${Date.now()}.png`;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+
+            // Then copy the link
+            const siteUrl = 'https://teegardenmath.github.io/dailybread';
+            await navigator.clipboard.writeText(siteUrl);
+
+            alert('Your image has been downloaded and the link copied to clipboard!');
+        } catch (error) {
+            console.error('Error copying link:', error);
+            alert('Failed to copy link. Please try again.');
         }
     }
 };
