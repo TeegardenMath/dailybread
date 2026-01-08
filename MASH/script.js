@@ -103,9 +103,14 @@ function createRerollItem(categoryKey, options) {
     let currentOption = getRandomOption();
     usedOptions.add(currentOption);
 
+    const textWrapper = document.createElement('span');
+    textWrapper.className = 'text-wrapper';
+
     const text = document.createElement('span');
     text.className = 'random-text';
     text.textContent = currentOption;
+
+    textWrapper.appendChild(text);
 
     const rerollBtn = document.createElement('button');
     rerollBtn.className = 'reroll-btn';
@@ -129,7 +134,7 @@ function createRerollItem(categoryKey, options) {
         }
     });
 
-    display.appendChild(text);
+    display.appendChild(textWrapper);
     display.appendChild(rerollBtn);
     display.appendChild(count);
     content.appendChild(display);
@@ -160,7 +165,12 @@ function createLockedItem(categoryKey, options) {
 
     const content = document.createElement('div');
     content.className = 'item-content';
-    content.textContent = randomOption;
+
+    const textWrapper = document.createElement('span');
+    textWrapper.className = 'text-wrapper';
+    textWrapper.textContent = randomOption;
+
+    content.appendChild(textWrapper);
 
     item.appendChild(number);
     item.appendChild(content);

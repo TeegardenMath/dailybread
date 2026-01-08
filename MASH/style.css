@@ -91,13 +91,13 @@ h2 {
     font-weight: bold;
 }
 
-.category-item.final .item-content {
+.category-item.final .text-wrapper {
     display: inline-block;
     position: relative;
     padding: 0.3rem 0.6rem;
 }
 
-.category-item.final .item-content::before {
+.category-item.final .text-wrapper::before {
     content: '';
     position: absolute;
     top: 50%;
@@ -109,6 +109,15 @@ h2 {
     border-radius: 50%;
     pointer-events: none;
     min-height: 2em;
+}
+
+.category-item.final input {
+    display: inline-block;
+    position: relative;
+    padding: 0.3rem 0.6rem;
+    border: 2.5px solid #7B68EE;
+    border-radius: 50%;
+    background: transparent;
 }
 
 .item-number {
