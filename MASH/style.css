@@ -46,18 +46,17 @@ h2 {
 }
 
 .category {
-    background: #fff;
-    padding: 0.75rem;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 0.5rem;
 }
 
 .category-title {
     font-weight: bold;
-    font-size: 0.85rem;
-    margin-bottom: 0.5rem;
+    font-size: 0.75rem;
+    margin-bottom: 0.4rem;
     text-transform: uppercase;
     letter-spacing: 0.05rem;
+    border-bottom: 1px solid #2c2416;
+    padding-bottom: 0.2rem;
 }
 
 .category-items {
@@ -95,10 +94,11 @@ h2 {
     background: #e8f4f8;
 }
 
-.item-label {
-    font-size: 0.7rem;
-    color: #666;
-    min-width: 70px;
+.item-number {
+    font-size: 0.75rem;
+    color: #2c2416;
+    min-width: 1.2rem;
+    font-weight: bold;
 }
 
 .item-content {

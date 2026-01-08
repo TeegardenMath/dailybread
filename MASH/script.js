@@ -186,20 +186,20 @@ function createUserInput(categoryKey) {
     item.dataset.category = categoryKey;
     item.dataset.type = 'user';
 
-    const label = document.createElement('span');
-    label.className = 'item-label';
-    label.textContent = 'Your choice:';
+    const number = document.createElement('span');
+    number.className = 'item-number';
+    number.textContent = '1.';
 
     const input = document.createElement('input');
     input.type = 'text';
-    input.placeholder = 'Type anything...';
+    input.placeholder = '...';
     input.dataset.categoryKey = categoryKey;
 
     const content = document.createElement('div');
     content.className = 'item-content';
     content.appendChild(input);
 
-    item.appendChild(label);
+    item.appendChild(number);
     item.appendChild(content);
 
     return item;
@@ -211,9 +211,9 @@ function createRerollItem(categoryKey, options) {
     item.dataset.category = categoryKey;
     item.dataset.type = 'reroll';
 
-    const label = document.createElement('span');
-    label.className = 'item-label';
-    label.textContent = 'Random:';
+    const number = document.createElement('span');
+    number.className = 'item-number';
+    number.textContent = '2.';
 
     const content = document.createElement('div');
     content.className = 'item-content';
@@ -240,10 +240,7 @@ function createRerollItem(categoryKey, options) {
     const rerollBtn = document.createElement('button');
     rerollBtn.className = 'reroll-btn';
     rerollBtn.textContent = '↻';
-
-    const count = document.createElement('span');
-    count.className = 'reroll-count';
-    count.textContent = `(${rerollsLeft} left)`;
+    rerollBtn.title = `${rerollsLeft} rerolls left`;
 
     rerollBtn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -252,20 +249,18 @@ function createRerollItem(categoryKey, options) {
             usedOptions.add(currentOption);
             text.textContent = currentOption;
             rerollsLeft--;
-            count.textContent = `(${rerollsLeft} left)`;
+            rerollBtn.title = rerollsLeft > 0 ? `${rerollsLeft} rerolls left` : 'No rerolls left';
             if (rerollsLeft === 0) {
                 rerollBtn.disabled = true;
-                count.textContent = '(no rerolls left)';
             }
         }
     });
 
     display.appendChild(text);
     display.appendChild(rerollBtn);
-    display.appendChild(count);
     content.appendChild(display);
 
-    item.appendChild(label);
+    item.appendChild(number);
     item.appendChild(content);
     item.dataset.value = currentOption;
 
@@ -283,9 +278,9 @@ function createLockedItem(categoryKey, options) {
     item.dataset.category = categoryKey;
     item.dataset.type = 'locked';
 
-    const label = document.createElement('span');
-    label.className = 'item-label';
-    label.textContent = 'Random (locked):';
+    const number = document.createElement('span');
+    number.className = 'item-number';
+    number.textContent = '3.';
 
     const randomOption = options[Math.floor(Math.random() * options.length)];
 
@@ -293,7 +288,7 @@ function createLockedItem(categoryKey, options) {
     content.className = 'item-content';
     content.textContent = randomOption;
 
-    item.appendChild(label);
+    item.appendChild(number);
     item.appendChild(content);
     item.dataset.value = randomOption;
 
