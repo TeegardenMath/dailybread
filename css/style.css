@@ -335,9 +335,29 @@ button {
 }
 
 /* Passage Selection */
+.passage-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin: 1.5rem auto 2rem;
+    flex-wrap: wrap;
+    max-width: 700px;
+    padding: 0 1rem;
+}
+
+.selection-prompt {
+    text-align: center;
+    font-size: 1.05rem;
+    color: var(--accent);
+    font-style: italic;
+    margin: 1rem auto 1.5rem;
+    padding: 0.75rem 1rem;
+    max-width: 600px;
+}
+
 #passage-display {
     max-width: 800px;
-    margin: 2rem auto;
+    margin: 0 auto 2rem;
     padding: 0 2rem;
 }
 
@@ -346,16 +366,6 @@ button {
     line-height: 1.9;
     color: var(--ink);
     text-align: left;
-    margin-bottom: 3rem;
-}
-
-.passage-controls {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    margin: 2rem auto;
-    flex-wrap: wrap;
-    max-width: 700px;
 }
 
 .btn-accept {
@@ -390,15 +400,30 @@ button {
 }
 
 .text-preview {
-    background: #fff;
-    border: 1px solid var(--accent);
-    border-radius: 3px;
-    padding: 1.5rem;
+    font-size: 1.1rem;
+    line-height: 1.8;
     max-height: 60vh;
     overflow-y: auto;
-    font-size: 1rem;
-    line-height: 1.7;
     white-space: pre-wrap;
+    padding: 0 2rem;
+    cursor: pointer;
+    user-select: none;
+}
+
+.text-preview .char {
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.text-preview .char.grayed {
+    color: #bbb;
+    opacity: 0.5;
+}
+
+.text-preview .char.start-marker,
+.text-preview .char.end-marker {
+    background: var(--accent);
+    color: var(--parchment);
+    padding: 0 2px;
 }
 
 

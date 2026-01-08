@@ -35,29 +35,27 @@
 
             <!-- Step 2: Text Chunk Selection -->
             <section id="chunk-selection-screen" class="screen">
+                <div class="passage-controls">
+                    <button id="reroll-passage-btn" class="btn-secondary">Reroll Passage</button>
+                    <button id="choose-passage-btn" class="btn-secondary">Choose a Passage</button>
+                    <button id="accept-passage-btn" class="btn-accept">Accept Passage</button>
+                    <button id="cancel-manual-btn" class="btn-secondary hidden">Cancel</button>
+                </div>
+
+                <div id="selection-prompt" class="selection-prompt hidden">
+                    <!-- Dynamic prompt will appear here -->
+                </div>
+
                 <div id="passage-display">
                     <div id="passage-text">
                         <!-- Passage will be displayed here -->
                     </div>
                 </div>
 
-                <div class="passage-controls">
-                    <button id="reroll-passage-btn" class="btn-secondary">Reroll Passage</button>
-                    <button id="choose-passage-btn" class="btn-secondary">Choose a Passage</button>
-                    <button id="accept-passage-btn" class="btn-accept">Accept Passage</button>
-                </div>
-
                 <div id="manual-selection-area" class="hidden">
-                    <p class="instruction">Scroll through the text and select your starting and ending points:</p>
-                    <div class="selection-controls">
-                        <button id="set-start-btn" class="btn-small">Set Start</button>
-                        <button id="set-end-btn" class="btn-small">Set End</button>
-                        <button id="confirm-selection-btn" class="btn-primary">Confirm Selection</button>
-                    </div>
                     <div id="text-preview" class="text-preview">
                         <!-- Full text will be loaded here -->
                     </div>
-                    <button id="cancel-manual-btn" class="btn-secondary">Cancel</button>
                 </div>
 
                 <button id="back-to-books-btn" class="btn-back">← Choose Different Book</button>

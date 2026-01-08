@@ -39,9 +39,6 @@ const App = {
         document.getElementById('reroll-passage-btn').addEventListener('click', () => this.rerollPassage());
         document.getElementById('choose-passage-btn').addEventListener('click', () => this.handleManualSelect());
         document.getElementById('accept-passage-btn').addEventListener('click', () => this.acceptPassage());
-        document.getElementById('set-start-btn').addEventListener('click', () => this.setSelectionStart());
-        document.getElementById('set-end-btn').addEventListener('click', () => this.setSelectionEnd());
-        document.getElementById('confirm-selection-btn').addEventListener('click', () => this.confirmSelection());
         document.getElementById('cancel-manual-btn').addEventListener('click', () => this.cancelManualSelection());
         document.getElementById('back-to-books-btn').addEventListener('click', () => this.backToBooks());
 
@@ -188,87 +185,145 @@ const App = {
 
     // Handle manual selection
     handleManualSelect() {
+        // Hide passage display and show manual selection
         document.getElementById('passage-display').classList.add('hidden');
         document.getElementById('manual-selection-area').classList.remove('hidden');
 
-        const preview = document.getElementById('text-preview');
-        preview.textContent = this.fullBookText;
+        // Hide main buttons, show cancel
+        document.getElementById('reroll-passage-btn').classList.add('hidden');
+        document.getElementById('choose-passage-btn').classList.add('hidden');
+        document.getElementById('accept-passage-btn').classList.add('hidden');
+        document.getElementById('cancel-manual-btn').classList.remove('hidden');
 
+        // Wrap text in spans for character-level selection
+        const preview = document.getElementById('text-preview');
+        preview.innerHTML = '';
+
+        for (let i = 0; i < this.fullBookText.length; i++) {
+            const span = document.createElement('span');
+            span.className = 'char';
+            span.textContent = this.fullBookText[i];
+            span.dataset.index = i;
+            preview.appendChild(span);
+        }
+
+        // Reset selection state
         this.selectionStart = null;
         this.selectionEnd = null;
+        this.selectionMode = 'start'; // 'start', 'end', or 'done'
+
+        // Show prompt
+        this.updateSelectionPrompt();
+
+        // Add click handler
+        preview.addEventListener('click', this.handleTextClick.bind(this));
     },
 
-    // Cancel manual selection
-    cancelManualSelection() {
-        document.getElementById('manual-selection-area').classList.add('hidden');
-        document.getElementById('passage-display').classList.remove('hidden');
-    },
+    // Handle clicks on text during manual selection
+    handleTextClick(e) {
+        if (e.target.classList.contains('char')) {
+            const index = parseInt(e.target.dataset.index);
 
-    // Set selection start
-    setSelectionStart() {
-        const preview = document.getElementById('text-preview');
-        const selection = window.getSelection();
-
-        if (selection.rangeCount > 0 && selection.toString().length > 0) {
-            const range = selection.getRangeAt(0);
-            const preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(preview);
-            preCaretRange.setEnd(range.startContainer, range.startOffset);
-            this.selectionStart = preCaretRange.toString().length;
-
-            alert('Start position set! Now select your end position.');
-        } else {
-            alert('Please select some text first');
+            if (this.selectionMode === 'start') {
+                this.selectionStart = index;
+                this.selectionMode = 'end';
+                this.updateVisualSelection();
+                this.updateSelectionPrompt();
+            } else if (this.selectionMode === 'end') {
+                if (index <= this.selectionStart) {
+                    // Show gentle feedback but don't alert
+                    this.updateSelectionPrompt('Please click after your starting point');
+                    setTimeout(() => this.updateSelectionPrompt(), 2000);
+                    return;
+                }
+                this.selectionEnd = index;
+                this.selectionMode = 'done';
+                this.updateVisualSelection();
+                this.updateSelectionPrompt();
+            } else if (this.selectionMode === 'done') {
+                // Finalize selection
+                this.finalizeManualSelection();
+            }
         }
     },
 
-    // Set selection end
-    setSelectionEnd() {
-        if (this.selectionStart === null) {
-            alert('Please set the start position first');
-            return;
-        }
-
+    // Update visual selection feedback
+    updateVisualSelection() {
         const preview = document.getElementById('text-preview');
-        const selection = window.getSelection();
+        const chars = preview.querySelectorAll('.char');
 
-        if (selection.rangeCount > 0 && selection.toString().length > 0) {
-            const range = selection.getRangeAt(0);
-            const preCaretRange = range.cloneRange();
-            preCaretRange.selectNodeContents(preview);
-            preCaretRange.setEnd(range.endContainer, range.endOffset);
-            this.selectionEnd = preCaretRange.toString().length;
+        chars.forEach((char, i) => {
+            char.classList.remove('grayed', 'start-marker', 'end-marker');
 
-            if (this.selectionEnd <= this.selectionStart) {
-                alert('End position must be after start position');
-                this.selectionEnd = null;
-                return;
+            if (this.selectionStart !== null && i < this.selectionStart) {
+                char.classList.add('grayed');
             }
 
-            alert('End position set! Click "Confirm Selection" to preview.');
-        } else {
-            alert('Please select some text first');
-        }
+            if (this.selectionEnd !== null && i > this.selectionEnd) {
+                char.classList.add('grayed');
+            }
+
+            if (i === this.selectionStart) {
+                char.classList.add('start-marker');
+            }
+
+            if (i === this.selectionEnd) {
+                char.classList.add('end-marker');
+            }
+        });
     },
 
-    // Confirm manual selection
-    confirmSelection() {
-        if (this.selectionStart === null || this.selectionEnd === null) {
-            alert('Please set both start and end positions');
+    // Update the selection prompt
+    updateSelectionPrompt(customMessage = null) {
+        const prompt = document.getElementById('selection-prompt');
+
+        if (customMessage) {
+            prompt.textContent = customMessage;
+            prompt.classList.remove('hidden');
             return;
         }
 
-        const chunk = Gutenberg.extractChunk(this.fullBookText, this.selectionStart, this.selectionEnd);
+        if (this.selectionMode === 'start') {
+            prompt.textContent = 'Click where you want your passage to start';
+        } else if (this.selectionMode === 'end') {
+            prompt.textContent = 'Click where you want your passage to end';
+        } else if (this.selectionMode === 'done') {
+            prompt.textContent = 'Click anywhere to accept this passage';
+        }
+
+        prompt.classList.remove('hidden');
+    },
+
+    // Finalize manual selection
+    finalizeManualSelection() {
+        const chunk = this.fullBookText.substring(this.selectionStart, this.selectionEnd + 1);
         this.currentText = chunk;
 
         // Show the selected chunk in the main passage display
         const passageDisplay = document.getElementById('passage-text');
         passageDisplay.textContent = chunk;
 
-        // Hide manual selection area, show passage display
+        // Clean up manual selection mode
+        this.cancelManualSelection();
+    },
+
+    // Cancel manual selection
+    cancelManualSelection() {
         document.getElementById('manual-selection-area').classList.add('hidden');
         document.getElementById('passage-display').classList.remove('hidden');
+        document.getElementById('selection-prompt').classList.add('hidden');
+
+        // Show main buttons, hide cancel
+        document.getElementById('reroll-passage-btn').classList.remove('hidden');
+        document.getElementById('choose-passage-btn').classList.remove('hidden');
+        document.getElementById('accept-passage-btn').classList.remove('hidden');
+        document.getElementById('cancel-manual-btn').classList.add('hidden');
+
+        // Remove click handler
+        const preview = document.getElementById('text-preview');
+        preview.removeEventListener('click', this.handleTextClick.bind(this));
     },
+
 
     // Back to book selection
     backToBooks() {
