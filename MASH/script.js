@@ -267,10 +267,11 @@ function startSpiralDrawing() {
             drawing = false;
             document.removeEventListener('keydown', stopSpiral);
 
-            // Draw line from center to edge at random angle
+            // Draw line from center to just past spiral edge at random angle
             const lineAngle = Math.random() * Math.PI * 2;
-            const lineEndX = centerX + (maxRadius + 20) * Math.cos(lineAngle);
-            const lineEndY = centerY + (maxRadius + 20) * Math.sin(lineAngle);
+            const lineLength = radius + 30;
+            const lineEndX = centerX + lineLength * Math.cos(lineAngle);
+            const lineEndY = centerY + lineLength * Math.sin(lineAngle);
 
             ctx.strokeStyle = '#9484EE';
             ctx.lineWidth = 4;
@@ -295,10 +296,17 @@ function startSpiralDrawing() {
 
             gameState.spiralNumber = Math.max(2, intersections || 3);
 
+            // Display the number
+            ctx.fillStyle = '#7B68EE';
+            ctx.font = 'bold 48px "Courier New", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(gameState.spiralNumber.toString(), centerX, centerY);
+
             setTimeout(() => {
                 document.getElementById('spiral-overlay').classList.add('hidden');
                 startElimination();
-            }, 1000);
+            }, 1500);
         }
     });
 
