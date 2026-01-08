@@ -114,19 +114,19 @@ section h3 {
     text-orientation: mixed;
 }
 
-/* Varied heights for books - authentic vintage binding colors */
-.book-card:nth-child(1) { height: 260px; background: #8B2635; border-right: 2px solid #6B1625; } /* Deep burgundy */
-.book-card:nth-child(2) { height: 290px; background: #2F5233; border-right: 2px solid #1F3223; } /* Forest green */
-.book-card:nth-child(3) { height: 245px; background: #6B4423; border-right: 2px solid #4B2413; } /* Saddle brown */
-.book-card:nth-child(4) { height: 280px; background: #1C3A52; border-right: 2px solid #0C2A42; } /* Navy blue */
-.book-card:nth-child(5) { height: 270px; background: #C19A6B; border-right: 2px solid #A17A4B; } /* Caramel leather */
-.book-card:nth-child(6) { height: 255px; background: #704241; border-right: 2px solid #502231; } /* Wine */
-.book-card:nth-child(7) { height: 285px; background: #3B5441; border-right: 2px solid #1B3431; } /* Hunter green */
-.book-card:nth-child(8) { height: 265px; background: #B5651D; border-right: 2px solid #95450D; } /* Cognac */
-.book-card:nth-child(9) { height: 275px; background: #2C5F5F; border-right: 2px solid #1C4F4F; } /* Deep teal */
-.book-card:nth-child(10) { height: 250px; background: #4A3C2A; border-right: 2px solid #2A1C1A; } /* Chocolate brown */
-.book-card:nth-child(11) { height: 295px; background: #4F4A45; border-right: 2px solid #2F2A25; } /* Charcoal grey */
-.book-card:nth-child(12) { height: 260px; background: #556B2F; border-right: 2px solid #354B1F; } /* Olive green */
+/* Varied heights for books - soft vintage cloth binding colors */
+.book-card:nth-child(1) { height: 260px; background: #A17A74; border-right: 2px solid #816A64; } /* Dusty rose */
+.book-card:nth-child(2) { height: 290px; background: #E5C896; border-right: 2px solid #C5A876; } /* Pale gold */
+.book-card:nth-child(3) { height: 245px; background: #D4C5B0; border-right: 2px solid #B4A590; } /* Cream */
+.book-card:nth-child(4) { height: 280px; background: #9DB49A; border-right: 2px solid #7D947A; } /* Sage green */
+.book-card:nth-child(5) { height: 270px; background: #B09A7D; border-right: 2px solid #907A5D; } /* Tan */
+.book-card:nth-child(6) { height: 255px; background: #A68B7B; border-right: 2px solid #866B5B; } /* Taupe */
+.book-card:nth-child(7) { height: 285px; background: #7D9A8B; border-right: 2px solid #5D7A6B; } /* Sea green */
+.book-card:nth-child(8) { height: 265px; background: #C9A87C; border-right: 2px solid #A9886C; } /* Faded ochre */
+.book-card:nth-child(9) { height: 275px; background: #8B9AA8; border-right: 2px solid #6B7A88; } /* Dusty blue */
+.book-card:nth-child(10) { height: 250px; background: #9F8B7A; border-right: 2px solid #7F6B5A; } /* Warm grey */
+.book-card:nth-child(11) { height: 295px; background: #B8A896; border-right: 2px solid #988876; } /* Putty */
+.book-card:nth-child(12) { height: 260px; background: #889B7F; border-right: 2px solid #687B5F; } /* Muted olive */
 
 .book-card:hover {
     transform: translateY(-8px);
