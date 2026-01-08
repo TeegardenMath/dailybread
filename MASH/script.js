@@ -269,7 +269,7 @@ function startSpiralDrawing() {
 
             // Draw line from center to just past spiral edge at random angle
             const lineAngle = Math.random() * Math.PI * 2;
-            const lineLength = radius + 30;
+            const lineLength = radius + 10;
             const lineEndX = centerX + lineLength * Math.cos(lineAngle);
             const lineEndY = centerY + lineLength * Math.sin(lineAngle);
 
@@ -296,12 +296,21 @@ function startSpiralDrawing() {
 
             gameState.spiralNumber = Math.max(2, intersections || 3);
 
-            // Display the number
-            ctx.fillStyle = '#7B68EE';
-            ctx.font = 'bold 48px "Courier New", monospace';
+            // Display the number with background
+            const numberText = gameState.spiralNumber.toString();
+            ctx.font = 'bold 64px "Courier New", monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText(gameState.spiralNumber.toString(), centerX, centerY);
+
+            // Draw white background circle
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.beginPath();
+            ctx.arc(centerX, centerY - radius - 80, 50, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw number
+            ctx.fillStyle = '#7B68EE';
+            ctx.fillText(numberText, centerX, centerY - radius - 80);
 
             setTimeout(() => {
                 document.getElementById('spiral-overlay').classList.add('hidden');
