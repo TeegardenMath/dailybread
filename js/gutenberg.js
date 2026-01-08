@@ -131,13 +131,14 @@ const Gutenberg = {
             const chunk = words.slice(randomStart, randomStart + wordCount).join(' ');
 
             // Check if it starts with a capital letter (likely beginning of sentence)
-            if (chunk[0] === chunk[0].toUpperCase()) {
+            if (/^[A-Z]/.test(chunk)) {
                 return chunk;
             }
         }
 
-        // If we couldn't find a good spot, just return from the beginning
-        return words.slice(0, wordCount).join(' ');
+        // If we couldn't find a good spot, just return a random chunk anyway
+        const randomStart = Math.floor(Math.random() * (words.length - wordCount));
+        return words.slice(randomStart, randomStart + wordCount).join(' ');
     },
 
     // Extract text between two indices
