@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MASH</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="setup-screen" class="screen">
+        <h1>MASH</h1>
+        <div id="categories"></div>
+        <button id="start-spiral">Continue</button>
+    </div>
+
+    <div id="spiral-screen" class="screen hidden">
+        <canvas id="spiral-canvas"></canvas>
+        <div id="spiral-instruction">Press SPACE to stop</div>
+    </div>
+
+    <div id="elimination-screen" class="screen hidden">
+        <div id="elimination-display"></div>
+    </div>
+
+    <div id="results-screen" class="screen hidden">
+        <h2>Your Future</h2>
+        <div id="results"></div>
+        <div id="share-buttons">
+            <button id="share-twitter">Share on Twitter</button>
+            <button id="share-tumblr">Share on Tumblr</button>
+            <button id="copy-discord">Copy for Discord</button>
+        </div>
+        <button id="play-again">Play Again</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

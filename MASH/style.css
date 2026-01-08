@@ -1,0 +1,252 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Courier New', monospace;
+    background: #f5f1e8;
+    color: #2c2416;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.screen {
+    width: 100%;
+    max-width: 900px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+h1 {
+    text-align: center;
+    font-size: 3rem;
+    margin-bottom: 2rem;
+    letter-spacing: 0.5rem;
+}
+
+h2 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Setup Screen */
+#categories {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.category {
+    background: #fff;
+    padding: 1.5rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.category-title {
+    font-weight: bold;
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1rem;
+}
+
+.category-items {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.category-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.5rem;
+    border-radius: 4px;
+    transition: all 0.3s;
+}
+
+.category-item.highlight {
+    background: #fff3cd;
+    transform: scale(1.05);
+    font-weight: bold;
+}
+
+.category-item.crossed-out {
+    text-decoration: line-through;
+    opacity: 0.4;
+}
+
+.category-item.final {
+    border: 3px solid #2c2416;
+    border-radius: 50%;
+    padding: 0.75rem;
+    font-weight: bold;
+    background: #e8f4f8;
+}
+
+.item-label {
+    font-size: 0.75rem;
+    color: #666;
+    min-width: 80px;
+}
+
+.item-content {
+    flex: 1;
+}
+
+input[type="text"] {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.random-display {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.random-text {
+    flex: 1;
+}
+
+.reroll-btn {
+    padding: 0.25rem 0.75rem;
+    background: #4a90a4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+}
+
+.reroll-btn:hover {
+    background: #3d7a8a;
+}
+
+.reroll-btn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.reroll-count {
+    font-size: 0.75rem;
+    color: #666;
+}
+
+button {
+    padding: 0.75rem 2rem;
+    background: #4a90a4;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    display: block;
+    margin: 2rem auto;
+}
+
+button:hover {
+    background: #3d7a8a;
+}
+
+/* Spiral Screen */
+#spiral-screen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #f5f1e8;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+#spiral-canvas {
+    border: 2px solid #2c2416;
+    background: white;
+}
+
+#spiral-instruction {
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    letter-spacing: 0.2rem;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* Elimination Screen */
+#elimination-display {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+}
+
+/* Results Screen */
+#results {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    margin-bottom: 2rem;
+    line-height: 1.8;
+    font-size: 1.1rem;
+}
+
+.result-item {
+    margin-bottom: 1rem;
+}
+
+.result-label {
+    font-weight: bold;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    color: #666;
+    letter-spacing: 0.1rem;
+}
+
+.result-value {
+    font-size: 1.2rem;
+    margin-top: 0.25rem;
+}
+
+#share-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+}
+
+#share-buttons button {
+    margin: 0;
+}
+
+#play-again {
+    background: #6b8e23;
+}
+
+#play-again:hover {
+    background: #556b1d;
+}
