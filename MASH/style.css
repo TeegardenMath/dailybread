@@ -132,7 +132,7 @@ input[type="text"] {
 }
 
 .random-text {
-    flex: 1;
+    display: inline-block;
 }
 
 .reroll-btn {
