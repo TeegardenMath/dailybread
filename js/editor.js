@@ -192,22 +192,23 @@ const Editor = {
     redrawBlackouts() {
         const canvas = document.getElementById('blackout-canvas');
         const ctx = canvas.getContext('2d');
-        const container = document.getElementById('poetry-text');
+        const textContainer = document.getElementById('poetry-text');
+        const canvasContainer = document.getElementById('poetry-canvas-container');
 
         // Clear canvas
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
         // Draw blackouts based on style
         this.selectedElements.forEach(index => {
-            const span = container.querySelector(`[data-index="${index}"]`);
+            const span = textContainer.querySelector(`[data-index="${index}"]`);
             if (!span) return;
 
             const rect = span.getBoundingClientRect();
-            const containerRect = container.getBoundingClientRect();
+            const canvasRect = canvasContainer.getBoundingClientRect();
 
-            // Calculate position relative to container
-            const x = rect.left - containerRect.left + container.scrollLeft;
-            const y = rect.top - containerRect.top + container.scrollTop;
+            // Calculate position relative to canvas container
+            const x = rect.left - canvasRect.left;
+            const y = rect.top - canvasRect.top;
             const width = rect.width;
             const height = rect.height;
 
