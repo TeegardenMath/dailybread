@@ -6,8 +6,8 @@
 
 body {
     font-family: 'Courier New', monospace;
-    background: #f5f1e8;
-    color: #2c2416;
+    background: #D4EBFF;
+    color: #2d1b4e;
     min-height: 100vh;
     display: flex;
     justify-content: center;
@@ -41,42 +41,43 @@ h2 {
 #categories {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
-    margin-bottom: 0.75rem;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
 }
 
 .category {
-    padding: 0.5rem;
+    padding: 0.4rem;
 }
 
 .category-title {
     font-weight: bold;
     font-size: 0.75rem;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.3rem;
     text-transform: uppercase;
     letter-spacing: 0.05rem;
-    border-bottom: 1px solid #2c2416;
-    padding-bottom: 0.2rem;
+    border-bottom: 1px solid #7B68EE;
+    padding-bottom: 0.15rem;
 }
 
 .category-items {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.15rem;
 }
 
 .category-item {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    padding: 0.25rem;
+    padding: 0.1rem;
     border-radius: 2px;
     transition: all 0.3s;
     font-size: 0.85rem;
+    line-height: 1.3;
 }
 
 .category-item.highlight {
-    background: #fff3cd;
+    background: #B3A6F6;
     transform: scale(1.05);
     font-weight: bold;
 }
@@ -87,16 +88,16 @@ h2 {
 }
 
 .category-item.final {
-    border: 2px solid #2c2416;
+    border: 2px solid #7B68EE;
     border-radius: 50%;
-    padding: 0.4rem;
+    padding: 0.3rem;
     font-weight: bold;
-    background: #e8f4f8;
+    background: #E8E0FF;
 }
 
 .item-number {
     font-size: 0.75rem;
-    color: #2c2416;
+    color: #2d1b4e;
     min-width: 1.2rem;
     font-weight: bold;
 }
@@ -107,11 +108,13 @@ h2 {
 
 input[type="text"] {
     width: 100%;
-    padding: 0.3rem 0.4rem;
-    border: 1px solid #ccc;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #A797FF;
     border-radius: 2px;
     font-family: inherit;
     font-size: 0.85rem;
+    background: white;
+    line-height: 1.3;
 }
 
 .random-display {
@@ -126,7 +129,7 @@ input[type="text"] {
 
 .reroll-btn {
     padding: 0.15rem 0.5rem;
-    background: #4a90a4;
+    background: #7B68EE;
     color: white;
     border: none;
     border-radius: 2px;
@@ -136,12 +139,13 @@ input[type="text"] {
 }
 
 .reroll-btn:hover {
-    background: #3d7a8a;
+    background: #6958D8;
 }
 
 .reroll-btn:disabled {
-    background: #ccc;
+    background: #B3A6F6;
     cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .reroll-count {
@@ -151,7 +155,7 @@ input[type="text"] {
 
 button {
     padding: 0.4rem 1.5rem;
-    background: #4a90a4;
+    background: #7B68EE;
     color: white;
     border: none;
     border-radius: 3px;
@@ -159,11 +163,11 @@ button {
     font-family: inherit;
     font-size: 0.9rem;
     display: block;
-    margin: 0.75rem auto;
+    margin: 0.5rem auto;
 }
 
 button:hover {
-    background: #3d7a8a;
+    background: #6958D8;
 }
 
 /* Spiral Screen */
@@ -173,7 +177,7 @@ button:hover {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: #f5f1e8;
+    background: #D4EBFF;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -181,7 +185,7 @@ button:hover {
 }
 
 #spiral-canvas {
-    border: 2px solid #2c2416;
+    border: 2px solid #7B68EE;
     background: white;
 }
 
@@ -201,7 +205,7 @@ button:hover {
 #elimination-display {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 /* Results Screen */
@@ -209,27 +213,28 @@ button:hover {
     background: white;
     padding: 1rem;
     border-radius: 4px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    border: 2px solid #7B68EE;
+    box-shadow: 0 2px 6px rgba(123,104,238,0.2);
     margin-bottom: 1rem;
-    line-height: 1.5;
+    line-height: 1.4;
     font-size: 0.9rem;
 }
 
 .result-item {
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
 }
 
 .result-label {
     font-weight: bold;
     text-transform: uppercase;
-    font-size: 0.75rem;
-    color: #666;
+    font-size: 0.7rem;
+    color: #7B68EE;
     letter-spacing: 0.05rem;
 }
 
 .result-value {
-    font-size: 0.95rem;
-    margin-top: 0.1rem;
+    font-size: 0.9rem;
+    margin-top: 0.05rem;
 }
 
 #share-buttons {
@@ -247,9 +252,9 @@ button:hover {
 }
 
 #play-again {
-    background: #6b8e23;
+    background: #A797FF;
 }
 
 #play-again:hover {
-    background: #556b1d;
+    background: #9484EE;
 }
