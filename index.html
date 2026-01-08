@@ -42,10 +42,6 @@
                     <button id="cancel-manual-btn" class="btn-secondary hidden">Cancel</button>
                 </div>
 
-                <div id="selection-prompt" class="selection-prompt hidden">
-                    <!-- Dynamic prompt will appear here -->
-                </div>
-
                 <div id="passage-display">
                     <div id="passage-text">
                         <!-- Passage will be displayed here -->
@@ -53,9 +49,11 @@
                 </div>
 
                 <div id="manual-selection-area" class="hidden">
+                    <p class="instruction">Select the text you want with your mouse, then click the button below:</p>
                     <div id="text-preview" class="text-preview">
                         <!-- Full text will be loaded here -->
                     </div>
+                    <button id="use-selection-btn" class="btn-accept">Use Selected Text</button>
                 </div>
 
                 <button id="back-to-books-btn" class="btn-back">← Choose Different Book</button>
@@ -63,16 +61,16 @@
 
             <!-- Step 3: Blackout Editor -->
             <section id="editor-screen" class="screen">
-                <div class="editor-header">
-                    <h2>Create Your Blackout Poetry</h2>
-                    <div class="editor-controls">
-                        <div class="style-selector">
-                            <label>Blackout Style:</label>
-                            <button id="style-bar" class="style-btn active">Bar</button>
-                            <button id="style-scribble" class="style-btn">Scribble</button>
+                <div class="editor-controls">
+                    <button id="back-to-chunk-selection-btn" class="btn-back">← Back</button>
+                    <button id="undo-btn" class="btn-secondary">Undo</button>
+                    <button id="clear-blackouts-btn" class="btn-secondary">Clear</button>
+                    <div class="export-dropdown">
+                        <button id="export-btn" class="btn-accept">Export ▾</button>
+                        <div id="export-menu" class="export-menu hidden">
+                            <button id="export-jpg-btn" class="export-option">Export as JPG</button>
+                            <button id="export-pdf-btn" class="export-option">Export as PDF</button>
                         </div>
-                        <button id="clear-blackouts-btn" class="btn-warning">Clear All</button>
-                        <button id="undo-btn" class="btn-secondary">Undo</button>
                     </div>
                 </div>
 
@@ -81,14 +79,6 @@
                         <!-- Text with selectable elements will be rendered here -->
                     </div>
                     <canvas id="blackout-canvas"></canvas>
-                </div>
-
-                <div class="editor-footer">
-                    <button id="back-to-chunk-selection-btn" class="btn-back">← Choose Different Passage</button>
-                    <div class="export-controls">
-                        <button id="export-jpg-btn" class="btn-primary">Export as JPG</button>
-                        <button id="export-pdf-btn" class="btn-primary">Export as PDF</button>
-                    </div>
                 </div>
             </section>
         </main>

@@ -45,9 +45,8 @@ const Editor = {
             });
         }
 
-        // Load saved style
-        this.currentStyle = Storage.getStyle();
-        this.updateStyleButtons();
+        // Always use bar style
+        this.currentStyle = 'bar';
 
         // Setup canvas
         this.setupCanvas();

@@ -40,11 +40,10 @@ const App = {
         document.getElementById('choose-passage-btn').addEventListener('click', () => this.handleManualSelect());
         document.getElementById('accept-passage-btn').addEventListener('click', () => this.acceptPassage());
         document.getElementById('cancel-manual-btn').addEventListener('click', () => this.cancelManualSelection());
+        document.getElementById('use-selection-btn').addEventListener('click', () => this.useManualSelection());
         document.getElementById('back-to-books-btn').addEventListener('click', () => this.backToBooks());
 
         // Editor Screen
-        document.getElementById('style-bar').addEventListener('click', () => Editor.setStyle('bar'));
-        document.getElementById('style-scribble').addEventListener('click', () => Editor.setStyle('scribble'));
         document.getElementById('clear-blackouts-btn').addEventListener('click', () => {
             if (confirm('Clear all blackouts?')) {
                 Editor.clearAll();
@@ -53,9 +52,23 @@ const App = {
         document.getElementById('undo-btn').addEventListener('click', () => Editor.undo());
         document.getElementById('back-to-chunk-selection-btn').addEventListener('click', () => this.backToChunkFromEditor());
 
-        // Export
-        document.getElementById('export-jpg-btn').addEventListener('click', () => ExportManager.exportAsJPG());
-        document.getElementById('export-pdf-btn').addEventListener('click', () => ExportManager.exportAsPDF());
+        // Export dropdown
+        document.getElementById('export-btn').addEventListener('click', () => this.toggleExportMenu());
+        document.getElementById('export-jpg-btn').addEventListener('click', () => {
+            this.hideExportMenu();
+            ExportManager.exportAsJPG();
+        });
+        document.getElementById('export-pdf-btn').addEventListener('click', () => {
+            this.hideExportMenu();
+            ExportManager.exportAsPDF();
+        });
+
+        // Close export menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.export-dropdown')) {
+                this.hideExportMenu();
+            }
+        });
     },
 
     // Load curated books
@@ -195,149 +208,26 @@ const App = {
         document.getElementById('accept-passage-btn').classList.add('hidden');
         document.getElementById('cancel-manual-btn').classList.remove('hidden');
 
-        // Show full text without wrapping in spans
+        // Show full text
         const preview = document.getElementById('text-preview');
-        this.renderTextPreview();
-
-        // Reset selection state
-        this.selectionStart = null;
-        this.selectionEnd = null;
-        this.selectionMode = 'start'; // 'start', 'end', or 'done'
-
-        // Show prompt
-        this.updateSelectionPrompt();
-
-        // Add click handler
-        this.textClickHandler = this.handleTextClick.bind(this);
-        preview.addEventListener('click', this.textClickHandler);
+        preview.textContent = this.fullBookText;
     },
 
-    // Render text preview efficiently
-    renderTextPreview() {
-        const preview = document.getElementById('text-preview');
-        preview.innerHTML = '';
+    // Use the manually selected text
+    useManualSelection() {
+        const selection = window.getSelection();
+        const selectedText = selection.toString().trim();
 
-        if (this.selectionStart === null) {
-            // No selection yet - show plain text
-            preview.textContent = this.fullBookText;
-        } else if (this.selectionEnd === null) {
-            // Start selected - show grayed before, normal after
-            const before = document.createElement('span');
-            before.className = 'grayed-text';
-            before.textContent = this.fullBookText.substring(0, this.selectionStart);
-
-            const marker = document.createElement('span');
-            marker.className = 'selection-marker';
-            marker.textContent = this.fullBookText[this.selectionStart];
-
-            const after = document.createElement('span');
-            after.textContent = this.fullBookText.substring(this.selectionStart + 1);
-
-            preview.appendChild(before);
-            preview.appendChild(marker);
-            preview.appendChild(after);
-        } else {
-            // Both selected - show grayed before/after, highlighted selection
-            const before = document.createElement('span');
-            before.className = 'grayed-text';
-            before.textContent = this.fullBookText.substring(0, this.selectionStart);
-
-            const startMarker = document.createElement('span');
-            startMarker.className = 'selection-marker';
-            startMarker.textContent = this.fullBookText[this.selectionStart];
-
-            const selected = document.createElement('span');
-            selected.textContent = this.fullBookText.substring(this.selectionStart + 1, this.selectionEnd);
-
-            const endMarker = document.createElement('span');
-            endMarker.className = 'selection-marker';
-            endMarker.textContent = this.fullBookText[this.selectionEnd];
-
-            const after = document.createElement('span');
-            after.className = 'grayed-text';
-            after.textContent = this.fullBookText.substring(this.selectionEnd + 1);
-
-            preview.appendChild(before);
-            preview.appendChild(startMarker);
-            preview.appendChild(selected);
-            preview.appendChild(endMarker);
-            preview.appendChild(after);
-        }
-    },
-
-    // Handle clicks on text during manual selection
-    handleTextClick(e) {
-        const preview = document.getElementById('text-preview');
-        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
-
-        if (!range) return;
-
-        // Calculate character index from the click position
-        let index = 0;
-        let node = range.startContainer;
-
-        // Get all text nodes
-        const walker = document.createTreeWalker(preview, NodeFilter.SHOW_TEXT);
-        let currentNode;
-
-        while (currentNode = walker.nextNode()) {
-            if (currentNode === node) {
-                index += range.startOffset;
-                break;
-            } else {
-                index += currentNode.length;
-            }
-        }
-
-        if (this.selectionMode === 'start') {
-            this.selectionStart = index;
-            this.selectionMode = 'end';
-            this.renderTextPreview();
-            this.updateSelectionPrompt();
-        } else if (this.selectionMode === 'end') {
-            if (index <= this.selectionStart) {
-                this.updateSelectionPrompt('Please click after your starting point');
-                setTimeout(() => this.updateSelectionPrompt(), 2000);
-                return;
-            }
-            this.selectionEnd = index;
-            this.selectionMode = 'done';
-            this.renderTextPreview();
-            this.updateSelectionPrompt();
-        } else if (this.selectionMode === 'done') {
-            this.finalizeManualSelection();
-        }
-    },
-
-    // Update the selection prompt
-    updateSelectionPrompt(customMessage = null) {
-        const prompt = document.getElementById('selection-prompt');
-
-        if (customMessage) {
-            prompt.textContent = customMessage;
-            prompt.classList.remove('hidden');
+        if (!selectedText || selectedText.length === 0) {
+            alert('Please select some text first');
             return;
         }
 
-        if (this.selectionMode === 'start') {
-            prompt.textContent = 'Click where you want your passage to start';
-        } else if (this.selectionMode === 'end') {
-            prompt.textContent = 'Click where you want your passage to end';
-        } else if (this.selectionMode === 'done') {
-            prompt.textContent = 'Click anywhere to accept this passage';
-        }
-
-        prompt.classList.remove('hidden');
-    },
-
-    // Finalize manual selection
-    finalizeManualSelection() {
-        const chunk = this.fullBookText.substring(this.selectionStart, this.selectionEnd + 1);
-        this.currentText = chunk;
+        this.currentText = selectedText;
 
         // Show the selected chunk in the main passage display
         const passageDisplay = document.getElementById('passage-text');
-        passageDisplay.textContent = chunk;
+        passageDisplay.textContent = selectedText;
 
         // Clean up manual selection mode
         this.cancelManualSelection();
@@ -347,20 +237,12 @@ const App = {
     cancelManualSelection() {
         document.getElementById('manual-selection-area').classList.add('hidden');
         document.getElementById('passage-display').classList.remove('hidden');
-        document.getElementById('selection-prompt').classList.add('hidden');
 
         // Show main buttons, hide cancel
         document.getElementById('reroll-passage-btn').classList.remove('hidden');
         document.getElementById('choose-passage-btn').classList.remove('hidden');
         document.getElementById('accept-passage-btn').classList.remove('hidden');
         document.getElementById('cancel-manual-btn').classList.add('hidden');
-
-        // Remove click handler
-        const preview = document.getElementById('text-preview');
-        if (this.textClickHandler) {
-            preview.removeEventListener('click', this.textClickHandler);
-            this.textClickHandler = null;
-        }
     },
 
 
@@ -390,6 +272,18 @@ const App = {
     showEditor() {
         this.showScreen('editor-screen');
         Editor.init(this.currentText);
+    },
+
+    // Toggle export menu
+    toggleExportMenu() {
+        const menu = document.getElementById('export-menu');
+        menu.classList.toggle('hidden');
+    },
+
+    // Hide export menu
+    hideExportMenu() {
+        const menu = document.getElementById('export-menu');
+        menu.classList.add('hidden');
     },
 
     // Show screen

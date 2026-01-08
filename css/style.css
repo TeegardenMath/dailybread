@@ -345,16 +345,6 @@ button {
     padding: 0 1rem;
 }
 
-.selection-prompt {
-    text-align: center;
-    font-size: 1.05rem;
-    color: var(--accent);
-    font-style: italic;
-    margin: 1rem auto 1.5rem;
-    padding: 0.75rem 1rem;
-    max-width: 600px;
-}
-
 #passage-display {
     max-width: 800px;
     margin: 0 auto 2rem;
@@ -406,68 +396,70 @@ button {
     overflow-y: auto;
     white-space: pre-wrap;
     padding: 0 2rem;
-    cursor: pointer;
-    user-select: none;
-}
-
-.text-preview .grayed-text {
-    color: #bbb;
-    opacity: 0.5;
-}
-
-.text-preview .selection-marker {
-    background: var(--accent);
-    color: var(--parchment);
-    padding: 0 2px;
+    margin-bottom: 1.5rem;
+    user-select: text;
 }
 
 
 /* Editor Screen */
-.editor-header {
-    margin-bottom: 1rem;
-}
-
 .editor-controls {
     display: flex;
-    gap: 0.75rem;
-    margin-top: 0.75rem;
+    gap: 1rem;
+    margin: 1.5rem auto 2rem;
     flex-wrap: wrap;
     align-items: center;
+    justify-content: center;
+    max-width: 700px;
+    padding: 0 1rem;
 }
 
-.style-selector {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.export-dropdown {
+    position: relative;
 }
 
-.style-selector label {
-    font-weight: 400;
-    color: var(--ink);
-    font-size: 0.9rem;
-}
-
-.style-btn {
-    padding: 0.4rem 1rem;
-    background: var(--parchment-dark);
-    color: var(--ink);
+.export-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: var(--parchment);
     border: 1px solid var(--accent);
-    font-size: 0.9rem;
+    border-radius: 3px;
+    margin-top: 0.5rem;
+    box-shadow: var(--shadow-md);
+    min-width: 160px;
+    z-index: 10;
 }
 
-.style-btn.active {
-    background: var(--ink);
-    color: var(--parchment);
-    border-color: var(--ink);
+.export-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: transparent;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.9rem;
+    color: var(--ink);
+    border-radius: 0;
+}
+
+.export-option:hover {
+    background: var(--parchment-dark);
+    transform: none;
+}
+
+.export-option:first-child {
+    border-radius: 3px 3px 0 0;
+}
+
+.export-option:last-child {
+    border-radius: 0 0 3px 3px;
 }
 
 #poetry-canvas-container {
     position: relative;
-    background: #fff;
-    border: 1px solid var(--accent);
-    border-radius: 3px;
-    padding: 2rem;
-    margin: 1rem 0;
+    padding: 0 2rem;
+    margin: 0 auto 2rem;
+    max-width: 800px;
     min-height: calc(100vh - 350px);
     max-height: calc(100vh - 280px);
     overflow-y: auto;
@@ -527,20 +519,6 @@ button {
     }
 }
 
-.editor-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 1rem;
-    flex-wrap: wrap;
-    gap: 0.75rem;
-}
-
-.export-controls {
-    display: flex;
-    gap: 0.5rem;
-    flex-wrap: wrap;
-}
 
 /* Loading Spinner */
 .loading {
@@ -639,19 +617,11 @@ button {
         line-height: 1.8;
     }
 
-    .passage-controls {
+    .passage-controls,
+    .editor-controls {
         flex-direction: column;
         align-items: stretch;
         padding: 0 1rem;
-    }
-
-    .editor-footer {
-        flex-direction: column;
-        align-items: stretch;
-    }
-
-    .export-controls {
-        flex-direction: column;
     }
 
     #poetry-canvas-container {
