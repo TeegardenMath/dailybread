@@ -35,14 +35,14 @@ const App = {
             if (e.key === 'Enter') this.handleSearch();
         });
 
-        // Chunk Selection Screen
-        document.getElementById('random-chunk-btn').addEventListener('click', () => this.handleRandomChunk());
-        document.getElementById('manual-select-btn').addEventListener('click', () => this.handleManualSelect());
+        // Passage Selection Screen
+        document.getElementById('reroll-passage-btn').addEventListener('click', () => this.rerollPassage());
+        document.getElementById('choose-passage-btn').addEventListener('click', () => this.handleManualSelect());
+        document.getElementById('accept-passage-btn').addEventListener('click', () => this.acceptPassage());
         document.getElementById('set-start-btn').addEventListener('click', () => this.setSelectionStart());
         document.getElementById('set-end-btn').addEventListener('click', () => this.setSelectionEnd());
         document.getElementById('confirm-selection-btn').addEventListener('click', () => this.confirmSelection());
-        document.getElementById('use-chunk-btn').addEventListener('click', () => this.useChunk());
-        document.getElementById('back-to-chunk-btn').addEventListener('click', () => this.backToChunkSelection());
+        document.getElementById('cancel-manual-btn').addEventListener('click', () => this.cancelManualSelection());
         document.getElementById('back-to-books-btn').addEventListener('click', () => this.backToBooks());
 
         // Editor Screen
@@ -147,6 +147,9 @@ const App = {
             Storage.saveBook(this.currentBook);
 
             this.showScreen('chunk-selection-screen');
+
+            // Show a random passage immediately
+            this.showRandomPassage();
         } catch (error) {
             alert('Failed to load book. Please try another.');
             console.error(error);
@@ -155,14 +158,37 @@ const App = {
         }
     },
 
-    // Handle random chunk selection
-    handleRandomChunk() {
+    // Show a random passage
+    showRandomPassage() {
         const chunk = Gutenberg.getRandomChunk(this.fullBookText, 300);
-        this.showChunkPreview(chunk);
+        this.currentText = chunk;
+
+        const passageDisplay = document.getElementById('passage-text');
+        passageDisplay.textContent = chunk;
+
+        document.getElementById('passage-display').classList.remove('hidden');
+        document.getElementById('manual-selection-area').classList.add('hidden');
+    },
+
+    // Reroll passage
+    rerollPassage() {
+        this.showRandomPassage();
+    },
+
+    // Accept passage and move to editor
+    acceptPassage() {
+        if (!this.currentText) {
+            alert('No text selected');
+            return;
+        }
+
+        Storage.saveText(this.currentText);
+        this.showEditor();
     },
 
     // Handle manual selection
     handleManualSelect() {
+        document.getElementById('passage-display').classList.add('hidden');
         document.getElementById('manual-selection-area').classList.remove('hidden');
 
         const preview = document.getElementById('text-preview');
@@ -170,6 +196,12 @@ const App = {
 
         this.selectionStart = null;
         this.selectionEnd = null;
+    },
+
+    // Cancel manual selection
+    cancelManualSelection() {
+        document.getElementById('manual-selection-area').classList.add('hidden');
+        document.getElementById('passage-display').classList.remove('hidden');
     },
 
     // Set selection start
@@ -227,44 +259,28 @@ const App = {
         }
 
         const chunk = Gutenberg.extractChunk(this.fullBookText, this.selectionStart, this.selectionEnd);
-        this.showChunkPreview(chunk);
-    },
-
-    // Show chunk preview
-    showChunkPreview(chunk) {
-        document.getElementById('chunk-content').textContent = chunk;
-        document.getElementById('selected-chunk-preview').classList.remove('hidden');
-        document.getElementById('manual-selection-area').classList.add('hidden');
-
         this.currentText = chunk;
-    },
 
-    // Use selected chunk
-    useChunk() {
-        if (!this.currentText) {
-            alert('No text selected');
-            return;
-        }
+        // Show the selected chunk in the main passage display
+        const passageDisplay = document.getElementById('passage-text');
+        passageDisplay.textContent = chunk;
 
-        Storage.saveText(this.currentText);
-        this.showEditor();
-    },
-
-    // Back to chunk selection
-    backToChunkSelection() {
-        document.getElementById('selected-chunk-preview').classList.add('hidden');
-        this.currentText = null;
+        // Hide manual selection area, show passage display
+        document.getElementById('manual-selection-area').classList.add('hidden');
+        document.getElementById('passage-display').classList.remove('hidden');
     },
 
     // Back to book selection
     backToBooks() {
         this.currentBook = null;
         this.fullBookText = null;
+        this.currentText = null;
         this.selectionStart = null;
         this.selectionEnd = null;
 
         document.getElementById('manual-selection-area').classList.add('hidden');
-        document.getElementById('selected-chunk-preview').classList.add('hidden');
+        document.getElementById('passage-display').classList.remove('hidden');
+        document.getElementById('passage-text').textContent = '';
 
         this.showScreen('text-selection-screen');
     },

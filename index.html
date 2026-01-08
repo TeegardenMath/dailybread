@@ -35,11 +35,16 @@
 
             <!-- Step 2: Text Chunk Selection -->
             <section id="chunk-selection-screen" class="screen">
-                <h2>Select Your Passage</h2>
-                <div class="chunk-controls">
-                    <button id="random-chunk-btn" class="btn-primary">Get Random Passage</button>
-                    <span class="or-divider">or</span>
-                    <button id="manual-select-btn" class="btn-secondary">Select Manually</button>
+                <div id="passage-display">
+                    <div id="passage-text">
+                        <!-- Passage will be displayed here -->
+                    </div>
+                </div>
+
+                <div class="passage-controls">
+                    <button id="reroll-passage-btn" class="btn-secondary">Reroll Passage</button>
+                    <button id="choose-passage-btn" class="btn-secondary">Choose a Passage</button>
+                    <button id="accept-passage-btn" class="btn-accept">Accept Passage</button>
                 </div>
 
                 <div id="manual-selection-area" class="hidden">
@@ -52,13 +57,7 @@
                     <div id="text-preview" class="text-preview">
                         <!-- Full text will be loaded here -->
                     </div>
-                </div>
-
-                <div id="selected-chunk-preview" class="chunk-preview hidden">
-                    <h3>Selected Passage:</h3>
-                    <div id="chunk-content"></div>
-                    <button id="use-chunk-btn" class="btn-primary">Use This Passage</button>
-                    <button id="back-to-chunk-btn" class="btn-secondary">Choose Different Passage</button>
+                    <button id="cancel-manual-btn" class="btn-secondary">Cancel</button>
                 </div>
 
                 <button id="back-to-books-btn" class="btn-back">← Choose Different Book</button>
