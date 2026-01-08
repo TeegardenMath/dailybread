@@ -93,6 +93,47 @@ When the user says they're done with the current project:
 
 ---
 
-## Notes from Next Project (MASH)
+## Notes from MASH Project - Completed 2026-01-08
+
+**What worked:**
+- Canvas overlay for spiral (semi-transparent background showing content underneath)
+- Line segment intersection algorithm for counting spiral crossings
+- Separating large data sets into separate file (data.js with 200+ options per category)
+- Numbered entries (1. 2. 3.) instead of descriptive labels for cleaner UI
+- Simple border + border-radius on inline-block spans for circles
+- Displaying intersection count as number above spiral with white background circle
+- Grid layout (2 columns) for compact presentation
+
+**Bugs that needed multiple fixes:**
+- **Circle styling (5+ attempts)**: Kept trying pseudo-elements and wrong DOM targets. Root cause: elimination display created simple divs with textContent, so CSS targeting .text-wrapper/.item-content had nothing to match. Solution: Wrap text in .item-text spans during elimination display creation, apply border directly to span.
+- **Spiral transition**: Started as separate screen, converted to overlay per user request
+- **Reroll spacing**: Used flex: 1 on text which pushed button far right. Fixed by changing to inline-block
+- **Spiral line length**: Initially extended to maxRadius, user wanted it to match actual spiral end (radius + small offset)
+
+**User aesthetic preferences learned:**
+- Extremely compact layouts (notebook paper aesthetic - minimal line spacing, tight gaps)
+- Purple/lavender color schemes (#7B68EE, #D4EBFF) over beige
+- Visible reroll counts displayed inline
+- No bounding boxes or cards - just underlines for sections
+- Numbers instead of descriptive labels
+- Clean, simple styling without decorative elements
+
+**Technical lessons:**
+- **Critical**: When applying conditional styling (like .final circles), verify target DOM elements exist in ALL contexts where class is applied. Setup screen vs elimination screen had different structures.
+- For inline-block elements to size to content, avoid flex: 1 (which forces expansion)
+- Canvas overlays: Use rgba background for semi-transparency, position: fixed with z-index
+- Line intersection math: Parametric form (ua and ub parameters), check 0 < t < 1 to exclude endpoint intersections
+- Large data sets: 200+ items per category drastically reduced repeats
+- File organization: Separate data.js from logic helps manage large option arrays
+
+**Data organization pattern:**
+- Moved game data to separate data.js file
+- Structured as: `const gameData = { category: { title, options: [] } }`
+- Load data.js before script.js in HTML
+- Makes it easy to expand options without cluttering main logic
+
+---
+
+## Notes from Next Project (gayifier)
 
 [Future Claude: Add your reflections here when this project is complete. Follow the same format as above - what worked, what didn't, user preferences, technical lessons, etc.]
