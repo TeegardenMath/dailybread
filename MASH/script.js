@@ -348,7 +348,12 @@ function startElimination() {
         cat.items.forEach(item => {
             const itemDiv = document.createElement('div');
             itemDiv.className = 'category-item';
-            itemDiv.textContent = item.value;
+
+            const textSpan = document.createElement('span');
+            textSpan.className = 'item-text';
+            textSpan.textContent = item.value;
+            itemDiv.appendChild(textSpan);
+
             itemDiv.dataset.category = item.category;
             itemDiv.dataset.eliminated = 'false';
             itemsDiv.appendChild(itemDiv);
