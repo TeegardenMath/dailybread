@@ -359,16 +359,31 @@ function animateElimination() {
     let currentIndex = 0;
     let count = 0;
 
+    function checkAndCircleFinals() {
+        // Check each category and circle the last remaining item
+        Object.keys(gameData).forEach(categoryKey => {
+            const remainingInCategory = items.filter(item =>
+                item.category === categoryKey && !item.eliminated && !item.final
+            );
+
+            if (remainingInCategory.length === 1) {
+                remainingInCategory[0].final = true;
+                remainingInCategory[0].displayElement.classList.add('final');
+            }
+        });
+    }
+
     function eliminateNext() {
-        if (items.filter(item => !item.eliminated).length === Object.keys(gameData).length) {
-            // One item left per category
+        // Check if all categories have their final item
+        const finalsCount = items.filter(item => item.final).length;
+        if (finalsCount === Object.keys(gameData).length) {
             setTimeout(() => showResults(), 1000);
             return;
         }
 
-        // Find next non-eliminated item
+        // Find next non-eliminated, non-final item
         let attempts = 0;
-        while (items[currentIndex].eliminated && attempts < items.length * 2) {
+        while ((items[currentIndex].eliminated || items[currentIndex].final) && attempts < items.length * 2) {
             currentIndex = (currentIndex + 1) % items.length;
             attempts++;
         }
@@ -390,12 +405,15 @@ function animateElimination() {
                 // Eliminate this item (only if not the last in category)
                 const category = items[currentIndex].category;
                 const remainingInCategory = items.filter(item =>
-                    item.category === category && !item.eliminated
+                    item.category === category && !item.eliminated && !item.final
                 );
 
                 if (remainingInCategory.length > 1) {
                     items[currentIndex].eliminated = true;
                     items[currentIndex].displayElement.classList.add('crossed-out');
+
+                    // Check if this elimination created a final item
+                    checkAndCircleFinals();
                 }
                 count = 0;
             }
