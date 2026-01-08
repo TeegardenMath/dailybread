@@ -260,9 +260,9 @@ const Editor = {
             const rect = span.getBoundingClientRect();
             const canvasRect = canvasContainer.getBoundingClientRect();
 
-            // Calculate position relative to canvas container
-            const x = rect.left - canvasRect.left;
-            const y = rect.top - canvasRect.top;
+            // Calculate position relative to canvas container, accounting for scroll
+            const x = rect.left - canvasRect.left + canvasContainer.scrollLeft;
+            const y = rect.top - canvasRect.top + canvasContainer.scrollTop;
             const width = rect.width;
             const height = rect.height;
 
@@ -322,5 +322,17 @@ const Editor = {
 window.addEventListener('resize', () => {
     if (document.getElementById('editor-screen').classList.contains('active')) {
         Editor.setupCanvas();
+    }
+});
+
+// Handle container scroll to keep blackouts aligned
+document.addEventListener('DOMContentLoaded', () => {
+    const container = document.getElementById('poetry-canvas-container');
+    if (container) {
+        container.addEventListener('scroll', () => {
+            if (document.getElementById('editor-screen').classList.contains('active')) {
+                Editor.redrawBlackouts();
+            }
+        });
     }
 });
