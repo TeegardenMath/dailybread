@@ -46,6 +46,9 @@ const Gutenberg = {
 
     // Fetch full text of a book
     async fetchBookText(bookId) {
+        // Use CORS proxy to avoid browser CORS restrictions
+        const CORS_PROXY = 'https://corsproxy.io/?';
+
         // Try multiple text file formats
         const formats = [
             `${this.GUTENBERG_BASE}/files/${bookId}/${bookId}-0.txt`,
@@ -55,7 +58,8 @@ const Gutenberg = {
 
         for (let url of formats) {
             try {
-                const response = await fetch(url);
+                const proxiedUrl = CORS_PROXY + encodeURIComponent(url);
+                const response = await fetch(proxiedUrl);
                 if (response.ok) {
                     let text = await response.text();
                     // Clean up Project Gutenberg header and footer
