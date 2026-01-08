@@ -56,23 +56,9 @@ const App = {
         document.getElementById('undo-btn').addEventListener('click', () => Editor.undo());
         document.getElementById('back-to-chunk-selection-btn').addEventListener('click', () => this.backToChunkFromEditor());
 
-        // Export and Share
+        // Export
         document.getElementById('export-jpg-btn').addEventListener('click', () => ExportManager.exportAsJPG());
         document.getElementById('export-pdf-btn').addEventListener('click', () => ExportManager.exportAsPDF());
-        document.getElementById('share-btn').addEventListener('click', () => ExportManager.showShareModal());
-
-        // Share Modal
-        document.querySelector('.modal-close').addEventListener('click', () => ExportManager.hideShareModal());
-        document.getElementById('share-twitter').addEventListener('click', () => ExportManager.shareToTwitter());
-        document.getElementById('share-facebook').addEventListener('click', () => ExportManager.shareToFacebook());
-        document.getElementById('copy-link').addEventListener('click', () => ExportManager.copyLink());
-
-        // Close modal on outside click
-        document.getElementById('share-modal').addEventListener('click', (e) => {
-            if (e.target.id === 'share-modal') {
-                ExportManager.hideShareModal();
-            }
-        });
     },
 
     // Load curated books
