@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Create beautiful blackout poetry from classic literature">
+    <title>Daily Bread - Blackout Poetry Creator</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header>
+            <h1>Daily Bread</h1>
+            <p class="tagline">Create blackout poetry from classic literature</p>
+        </header>
+
+        <!-- Main Container -->
+        <main id="main-container">
+            <!-- Step 1: Text Selection -->
+            <section id="text-selection-screen" class="screen active">
+                <h2>Choose Your Text</h2>
+
+                <!-- Curated Classics -->
+                <div class="curated-section">
+                    <h3>Popular Classics</h3>
+                    <div id="curated-books" class="book-grid">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Search Section -->
+                <div class="search-section">
+                    <h3>Search Project Gutenberg</h3>
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search by title or author...">
+                        <button id="search-btn">Search</button>
+                    </div>
+                    <div id="search-results" class="book-grid">
+                        <!-- Search results will appear here -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Step 2: Text Chunk Selection -->
+            <section id="chunk-selection-screen" class="screen">
+                <h2>Select Your Passage</h2>
+                <div class="chunk-controls">
+                    <button id="random-chunk-btn" class="btn-primary">Get Random Passage</button>
+                    <span class="or-divider">or</span>
+                    <button id="manual-select-btn" class="btn-secondary">Select Manually</button>
+                </div>
+
+                <div id="manual-selection-area" class="hidden">
+                    <p class="instruction">Scroll through the text and select your starting and ending points:</p>
+                    <div class="selection-controls">
+                        <button id="set-start-btn" class="btn-small">Set Start</button>
+                        <button id="set-end-btn" class="btn-small">Set End</button>
+                        <button id="confirm-selection-btn" class="btn-primary">Confirm Selection</button>
+                    </div>
+                    <div id="text-preview" class="text-preview">
+                        <!-- Full text will be loaded here -->
+                    </div>
+                </div>
+
+                <div id="selected-chunk-preview" class="chunk-preview hidden">
+                    <h3>Selected Passage:</h3>
+                    <div id="chunk-content"></div>
+                    <button id="use-chunk-btn" class="btn-primary">Use This Passage</button>
+                    <button id="back-to-chunk-btn" class="btn-secondary">Choose Different Passage</button>
+                </div>
+
+                <button id="back-to-books-btn" class="btn-back">← Choose Different Book</button>
+            </section>
+
+            <!-- Step 3: Blackout Editor -->
+            <section id="editor-screen" class="screen">
+                <div class="editor-header">
+                    <h2>Create Your Blackout Poetry</h2>
+                    <div class="editor-controls">
+                        <div class="style-selector">
+                            <label>Blackout Style:</label>
+                            <button id="style-bar" class="style-btn active">Bar</button>
+                            <button id="style-scribble" class="style-btn">Scribble</button>
+                        </div>
+                        <button id="clear-blackouts-btn" class="btn-warning">Clear All</button>
+                        <button id="undo-btn" class="btn-secondary">Undo</button>
+                    </div>
+                </div>
+
+                <div id="poetry-canvas-container">
+                    <div id="poetry-text">
+                        <!-- Text with selectable elements will be rendered here -->
+                    </div>
+                    <canvas id="blackout-canvas"></canvas>
+                </div>
+
+                <div class="editor-footer">
+                    <button id="back-to-chunk-selection-btn" class="btn-back">← Choose Different Passage</button>
+                    <div class="export-controls">
+                        <button id="export-jpg-btn" class="btn-primary">Export as JPG</button>
+                        <button id="export-pdf-btn" class="btn-primary">Export as PDF</button>
+                        <button id="share-btn" class="btn-primary">Share</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Share Modal -->
+            <div id="share-modal" class="modal hidden">
+                <div class="modal-content">
+                    <button class="modal-close">&times;</button>
+                    <h3>Share Your Poetry</h3>
+                    <p>Create your own blackout poetry at:</p>
+                    <p class="share-link">https://teegardenmath.github.io/dailybread</p>
+                    <div class="social-buttons">
+                        <button id="share-twitter" class="social-btn twitter">Share on Twitter</button>
+                        <button id="share-facebook" class="social-btn facebook">Share on Facebook</button>
+                        <button id="copy-link" class="social-btn copy">Copy Link</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Loading Spinner -->
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+
+    <!-- External Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <!-- Application Scripts -->
+    <script src="js/storage.js"></script>
+    <script src="js/gutenberg.js"></script>
+    <script src="js/editor.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>

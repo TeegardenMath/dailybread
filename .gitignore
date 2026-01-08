@@ -1,0 +1,31 @@
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Editor directories and files
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Logs
+*.log
+
+# Local development
+.env
+.env.local
+
+# Build files (if needed in future)
+dist/
+build/
+
+# Temporary files
+*.tmp
+temp/
+
+# Claude Code internal files
+.claude/
+
+# Project specification (not part of the app)
+project spec.rtf
