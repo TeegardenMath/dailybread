@@ -87,6 +87,7 @@ section h3 {
 /* Bookshelf */
 .bookshelf-container {
     margin-bottom: 3rem;
+    position: relative;
 }
 
 .bookshelf {
@@ -94,13 +95,13 @@ section h3 {
     justify-content: center;
     align-items: flex-end;
     gap: 0.5rem;
-    padding: 2rem 1rem 1.5rem;
+    padding: 2rem 1rem 0;
     flex-wrap: wrap;
+    position: relative;
 }
 
 .book-card {
     width: 50px;
-    height: 280px;
     cursor: pointer;
     transition: all 0.2s ease;
     position: relative;
@@ -113,18 +114,19 @@ section h3 {
     text-orientation: mixed;
 }
 
-.book-card:nth-child(1) { background: #8b4513; border-right: 2px solid #6b3410; }
-.book-card:nth-child(2) { background: #2d5016; border-right: 2px solid #1d3010; }
-.book-card:nth-child(3) { background: #4a2c2a; border-right: 2px solid #3a1c1a; }
-.book-card:nth-child(4) { background: #1a3a52; border-right: 2px solid #0a2a42; }
-.book-card:nth-child(5) { background: #704214; border-right: 2px solid #503210; }
-.book-card:nth-child(6) { background: #5a3a3a; border-right: 2px solid #4a2a2a; }
-.book-card:nth-child(7) { background: #2c4a2c; border-right: 2px solid #1c3a1c; }
-.book-card:nth-child(8) { background: #6b4423; border-right: 2px solid #5b3413; }
-.book-card:nth-child(9) { background: #3d3d5c; border-right: 2px solid #2d2d4c; }
-.book-card:nth-child(10) { background: #654321; border-right: 2px solid #553311; }
-.book-card:nth-child(11) { background: #4b3621; border-right: 2px solid #3b2611; }
-.book-card:nth-child(12) { background: #2f4f2f; border-right: 2px solid #1f3f1f; }
+/* Varied heights for books */
+.book-card:nth-child(1) { height: 260px; background: #9b8579; border-right: 2px solid #7b6559; }
+.book-card:nth-child(2) { height: 290px; background: #a89f91; border-right: 2px solid #887f71; }
+.book-card:nth-child(3) { height: 245px; background: #b4a996; border-right: 2px solid #948976; }
+.book-card:nth-child(4) { height: 280px; background: #7d8a96; border-right: 2px solid #5d6a76; }
+.book-card:nth-child(5) { height: 270px; background: #b8956f; border-right: 2px solid #98754f; }
+.book-card:nth-child(6) { height: 255px; background: #9a8e83; border-right: 2px solid #7a6e63; }
+.book-card:nth-child(7) { height: 285px; background: #8b9a7e; border-right: 2px solid #6b7a5e; }
+.book-card:nth-child(8) { height: 265px; background: #a88f6f; border-right: 2px solid #886f4f; }
+.book-card:nth-child(9) { height: 275px; background: #8e8b9d; border-right: 2px solid #6e6b7d; }
+.book-card:nth-child(10) { height: 250px; background: #a69885; border-right: 2px solid #867865; }
+.book-card:nth-child(11) { height: 295px; background: #95907f; border-right: 2px solid #75705f; }
+.book-card:nth-child(12) { height: 260px; background: #8a9b85; border-right: 2px solid #6a7b65; }
 
 .book-card:hover {
     transform: translateY(-8px);
@@ -139,6 +141,20 @@ section h3 {
     padding: 0.5rem 0.3rem;
     text-align: center;
 }
+
+/* Font variety */
+.book-card:nth-child(1) h4 { font-family: 'Georgia', serif; }
+.book-card:nth-child(2) h4 { font-family: 'Palatino Linotype', serif; font-weight: 400; }
+.book-card:nth-child(3) h4 { font-family: 'Garamond', serif; }
+.book-card:nth-child(4) h4 { font-family: 'Times New Roman', serif; }
+.book-card:nth-child(5) h4 { font-family: 'Georgia', serif; font-style: italic; }
+.book-card:nth-child(6) h4 { font-family: 'Palatino Linotype', serif; }
+.book-card:nth-child(7) h4 { font-family: 'Garamond', serif; font-weight: 600; }
+.book-card:nth-child(8) h4 { font-family: 'Times New Roman', serif; font-style: italic; }
+.book-card:nth-child(9) h4 { font-family: 'Georgia', serif; }
+.book-card:nth-child(10) h4 { font-family: 'Palatino Linotype', serif; font-weight: 400; }
+.book-card:nth-child(11) h4 { font-family: 'Garamond', serif; }
+.book-card:nth-child(12) h4 { font-family: 'Times New Roman', serif; }
 
 .book-card .author {
     display: none;
@@ -549,13 +565,26 @@ button {
     }
 
     .bookshelf {
-        padding: 1rem 0.5rem 1rem;
+        padding: 1rem 0.5rem 0;
     }
 
     .book-card {
         width: 40px;
-        height: 220px;
     }
+
+    /* Proportionally scaled heights for mobile */
+    .book-card:nth-child(1) { height: 195px; }
+    .book-card:nth-child(2) { height: 220px; }
+    .book-card:nth-child(3) { height: 185px; }
+    .book-card:nth-child(4) { height: 210px; }
+    .book-card:nth-child(5) { height: 205px; }
+    .book-card:nth-child(6) { height: 192px; }
+    .book-card:nth-child(7) { height: 215px; }
+    .book-card:nth-child(8) { height: 200px; }
+    .book-card:nth-child(9) { height: 207px; }
+    .book-card:nth-child(10) { height: 188px; }
+    .book-card:nth-child(11) { height: 222px; }
+    .book-card:nth-child(12) { height: 195px; }
 
     .book-card h4 {
         font-size: 0.75rem;
@@ -613,8 +642,21 @@ button {
 
     .book-card {
         width: 35px;
-        height: 180px;
     }
+
+    /* Smaller heights for tiny screens */
+    .book-card:nth-child(1) { height: 156px; }
+    .book-card:nth-child(2) { height: 174px; }
+    .book-card:nth-child(3) { height: 147px; }
+    .book-card:nth-child(4) { height: 168px; }
+    .book-card:nth-child(5) { height: 162px; }
+    .book-card:nth-child(6) { height: 153px; }
+    .book-card:nth-child(7) { height: 171px; }
+    .book-card:nth-child(8) { height: 159px; }
+    .book-card:nth-child(9) { height: 165px; }
+    .book-card:nth-child(10) { height: 150px; }
+    .book-card:nth-child(11) { height: 177px; }
+    .book-card:nth-child(12) { height: 156px; }
 
     .book-card h4 {
         font-size: 0.7rem;
@@ -641,12 +683,22 @@ button {
     }
 
     .bookshelf {
-        padding: 1rem 0.5rem 0.5rem;
+        padding: 1rem 0.5rem 0;
     }
 
-    .book-card {
-        height: 200px;
-    }
+    /* Shorter heights for landscape */
+    .book-card:nth-child(1) { height: 173px; }
+    .book-card:nth-child(2) { height: 193px; }
+    .book-card:nth-child(3) { height: 163px; }
+    .book-card:nth-child(4) { height: 187px; }
+    .book-card:nth-child(5) { height: 180px; }
+    .book-card:nth-child(6) { height: 170px; }
+    .book-card:nth-child(7) { height: 190px; }
+    .book-card:nth-child(8) { height: 177px; }
+    .book-card:nth-child(9) { height: 183px; }
+    .book-card:nth-child(10) { height: 167px; }
+    .book-card:nth-child(11) { height: 197px; }
+    .book-card:nth-child(12) { height: 173px; }
 
     .bookshelf-container {
         margin-bottom: 1.5rem;
