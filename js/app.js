@@ -195,17 +195,9 @@ const App = {
         document.getElementById('accept-passage-btn').classList.add('hidden');
         document.getElementById('cancel-manual-btn').classList.remove('hidden');
 
-        // Wrap text in spans for character-level selection
+        // Show full text without wrapping in spans
         const preview = document.getElementById('text-preview');
-        preview.innerHTML = '';
-
-        for (let i = 0; i < this.fullBookText.length; i++) {
-            const span = document.createElement('span');
-            span.className = 'char';
-            span.textContent = this.fullBookText[i];
-            span.dataset.index = i;
-            preview.appendChild(span);
-        }
+        this.renderTextPreview();
 
         // Reset selection state
         this.selectionStart = null;
@@ -216,61 +208,105 @@ const App = {
         this.updateSelectionPrompt();
 
         // Add click handler
-        preview.addEventListener('click', this.handleTextClick.bind(this));
+        this.textClickHandler = this.handleTextClick.bind(this);
+        preview.addEventListener('click', this.textClickHandler);
+    },
+
+    // Render text preview efficiently
+    renderTextPreview() {
+        const preview = document.getElementById('text-preview');
+        preview.innerHTML = '';
+
+        if (this.selectionStart === null) {
+            // No selection yet - show plain text
+            preview.textContent = this.fullBookText;
+        } else if (this.selectionEnd === null) {
+            // Start selected - show grayed before, normal after
+            const before = document.createElement('span');
+            before.className = 'grayed-text';
+            before.textContent = this.fullBookText.substring(0, this.selectionStart);
+
+            const marker = document.createElement('span');
+            marker.className = 'selection-marker';
+            marker.textContent = this.fullBookText[this.selectionStart];
+
+            const after = document.createElement('span');
+            after.textContent = this.fullBookText.substring(this.selectionStart + 1);
+
+            preview.appendChild(before);
+            preview.appendChild(marker);
+            preview.appendChild(after);
+        } else {
+            // Both selected - show grayed before/after, highlighted selection
+            const before = document.createElement('span');
+            before.className = 'grayed-text';
+            before.textContent = this.fullBookText.substring(0, this.selectionStart);
+
+            const startMarker = document.createElement('span');
+            startMarker.className = 'selection-marker';
+            startMarker.textContent = this.fullBookText[this.selectionStart];
+
+            const selected = document.createElement('span');
+            selected.textContent = this.fullBookText.substring(this.selectionStart + 1, this.selectionEnd);
+
+            const endMarker = document.createElement('span');
+            endMarker.className = 'selection-marker';
+            endMarker.textContent = this.fullBookText[this.selectionEnd];
+
+            const after = document.createElement('span');
+            after.className = 'grayed-text';
+            after.textContent = this.fullBookText.substring(this.selectionEnd + 1);
+
+            preview.appendChild(before);
+            preview.appendChild(startMarker);
+            preview.appendChild(selected);
+            preview.appendChild(endMarker);
+            preview.appendChild(after);
+        }
     },
 
     // Handle clicks on text during manual selection
     handleTextClick(e) {
-        if (e.target.classList.contains('char')) {
-            const index = parseInt(e.target.dataset.index);
+        const preview = document.getElementById('text-preview');
+        const range = document.caretRangeFromPoint(e.clientX, e.clientY);
 
-            if (this.selectionMode === 'start') {
-                this.selectionStart = index;
-                this.selectionMode = 'end';
-                this.updateVisualSelection();
-                this.updateSelectionPrompt();
-            } else if (this.selectionMode === 'end') {
-                if (index <= this.selectionStart) {
-                    // Show gentle feedback but don't alert
-                    this.updateSelectionPrompt('Please click after your starting point');
-                    setTimeout(() => this.updateSelectionPrompt(), 2000);
-                    return;
-                }
-                this.selectionEnd = index;
-                this.selectionMode = 'done';
-                this.updateVisualSelection();
-                this.updateSelectionPrompt();
-            } else if (this.selectionMode === 'done') {
-                // Finalize selection
-                this.finalizeManualSelection();
+        if (!range) return;
+
+        // Calculate character index from the click position
+        let index = 0;
+        let node = range.startContainer;
+
+        // Get all text nodes
+        const walker = document.createTreeWalker(preview, NodeFilter.SHOW_TEXT);
+        let currentNode;
+
+        while (currentNode = walker.nextNode()) {
+            if (currentNode === node) {
+                index += range.startOffset;
+                break;
+            } else {
+                index += currentNode.length;
             }
         }
-    },
 
-    // Update visual selection feedback
-    updateVisualSelection() {
-        const preview = document.getElementById('text-preview');
-        const chars = preview.querySelectorAll('.char');
-
-        chars.forEach((char, i) => {
-            char.classList.remove('grayed', 'start-marker', 'end-marker');
-
-            if (this.selectionStart !== null && i < this.selectionStart) {
-                char.classList.add('grayed');
+        if (this.selectionMode === 'start') {
+            this.selectionStart = index;
+            this.selectionMode = 'end';
+            this.renderTextPreview();
+            this.updateSelectionPrompt();
+        } else if (this.selectionMode === 'end') {
+            if (index <= this.selectionStart) {
+                this.updateSelectionPrompt('Please click after your starting point');
+                setTimeout(() => this.updateSelectionPrompt(), 2000);
+                return;
             }
-
-            if (this.selectionEnd !== null && i > this.selectionEnd) {
-                char.classList.add('grayed');
-            }
-
-            if (i === this.selectionStart) {
-                char.classList.add('start-marker');
-            }
-
-            if (i === this.selectionEnd) {
-                char.classList.add('end-marker');
-            }
-        });
+            this.selectionEnd = index;
+            this.selectionMode = 'done';
+            this.renderTextPreview();
+            this.updateSelectionPrompt();
+        } else if (this.selectionMode === 'done') {
+            this.finalizeManualSelection();
+        }
     },
 
     // Update the selection prompt
@@ -321,7 +357,10 @@ const App = {
 
         // Remove click handler
         const preview = document.getElementById('text-preview');
-        preview.removeEventListener('click', this.handleTextClick.bind(this));
+        if (this.textClickHandler) {
+            preview.removeEventListener('click', this.textClickHandler);
+            this.textClickHandler = null;
+        }
     },
 
 

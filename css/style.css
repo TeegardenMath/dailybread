@@ -410,17 +410,12 @@ button {
     user-select: none;
 }
 
-.text-preview .char {
-    transition: color 0.2s ease, opacity 0.2s ease;
-}
-
-.text-preview .char.grayed {
+.text-preview .grayed-text {
     color: #bbb;
     opacity: 0.5;
 }
 
-.text-preview .char.start-marker,
-.text-preview .char.end-marker {
+.text-preview .selection-marker {
     background: var(--accent);
     color: var(--parchment);
     padding: 0 2px;
