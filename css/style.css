@@ -349,11 +349,11 @@ button {
     line-height: 2;
     position: relative;
     z-index: 1;
-    user-select: none;
+    user-select: text;
 }
 
 #poetry-text span {
-    cursor: pointer;
+    cursor: text;
     position: relative;
     display: inline;
 }
@@ -369,6 +369,32 @@ button {
     left: 0;
     pointer-events: none;
     z-index: 2;
+}
+
+#selection-hint {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--secondary-color);
+    color: var(--white);
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    font-size: 1.1rem;
+    z-index: 100;
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
 }
 
 .editor-footer {

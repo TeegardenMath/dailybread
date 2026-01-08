@@ -4,11 +4,13 @@ const Editor = {
     selectedElements: new Set(),
     undoStack: [],
     maxUndoSteps: 50,
+    hasSeenHint: false,
 
     // Initialize the editor with text
     init(text) {
         this.selectedElements.clear();
         this.undoStack = [];
+        this.hasSeenHint = Storage.getHasSeenHint();
 
         const container = document.getElementById('poetry-text');
         container.innerHTML = '';
@@ -23,8 +25,6 @@ const Editor = {
                 span.textContent = token;
                 span.dataset.index = index;
                 span.className = 'word';
-
-                span.addEventListener('click', () => this.toggleWord(span));
 
                 container.appendChild(span);
             } else {
@@ -51,6 +51,9 @@ const Editor = {
 
         // Setup canvas
         this.setupCanvas();
+
+        // Setup selection hint
+        this.setupSelectionListeners();
     },
 
     // Tokenize text into words and whitespace
@@ -93,20 +96,72 @@ const Editor = {
         this.redrawBlackouts();
     },
 
-    // Toggle word selection
-    toggleWord(span) {
-        const index = parseInt(span.dataset.index);
+    // Setup selection listeners
+    setupSelectionListeners() {
+        const container = document.getElementById('poetry-text');
+
+        // Show hint on first selection
+        container.addEventListener('mouseup', () => {
+            const selection = window.getSelection();
+            if (selection.toString().length > 0 && !this.hasSeenHint) {
+                this.showHint();
+                this.hasSeenHint = true;
+                Storage.saveHasSeenHint(true);
+            }
+        });
+
+        // Listen for spacebar to blackout selection
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' && document.getElementById('editor-screen').classList.contains('active')) {
+                const selection = window.getSelection();
+                if (selection.toString().length > 0) {
+                    e.preventDefault();
+                    this.blackoutSelection(selection);
+                }
+            }
+        });
+    },
+
+    // Show hint to user
+    showHint() {
+        const hint = document.createElement('div');
+        hint.id = 'selection-hint';
+        hint.textContent = 'Press SPACE to blackout your selection';
+        document.body.appendChild(hint);
+
+        setTimeout(() => {
+            hint.remove();
+        }, 3000);
+    },
+
+    // Blackout the current selection
+    blackoutSelection(selection) {
+        if (selection.rangeCount === 0) return;
 
         // Save state for undo
         this.saveState();
 
-        if (this.selectedElements.has(index)) {
-            this.selectedElements.delete(index);
-            span.classList.remove('selected');
-        } else {
-            this.selectedElements.add(index);
-            span.classList.add('selected');
-        }
+        const container = document.getElementById('poetry-text');
+        const range = selection.getRangeAt(0);
+
+        // Get all word spans in the container
+        const allSpans = Array.from(container.querySelectorAll('span[data-index]'));
+
+        // Find spans that intersect with the selection
+        allSpans.forEach(span => {
+            const spanRange = document.createRange();
+            spanRange.selectNodeContents(span);
+
+            // Check if this span intersects with the selection
+            if (range.intersectsNode(span)) {
+                const index = parseInt(span.dataset.index);
+                this.selectedElements.add(index);
+                span.classList.add('selected');
+            }
+        });
+
+        // Clear the selection
+        selection.removeAllRanges();
 
         // Save to storage
         Storage.saveBlackouts(Array.from(this.selectedElements));

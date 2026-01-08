@@ -4,7 +4,8 @@ const Storage = {
         CURRENT_BOOK: 'dailybread_current_book',
         CURRENT_TEXT: 'dailybread_current_text',
         BLACKOUTS: 'dailybread_blackouts',
-        STYLE: 'dailybread_style'
+        STYLE: 'dailybread_style',
+        HAS_SEEN_HINT: 'dailybread_has_seen_hint'
     },
 
     // Save current book information
@@ -103,6 +104,26 @@ const Storage = {
             localStorage.removeItem(this.KEYS.BLACKOUTS);
         } catch (e) {
             console.error('Error clearing blackouts:', e);
+        }
+    },
+
+    // Save whether user has seen the hint
+    saveHasSeenHint(value) {
+        try {
+            localStorage.setItem(this.KEYS.HAS_SEEN_HINT, JSON.stringify(value));
+        } catch (e) {
+            console.error('Error saving hint status:', e);
+        }
+    },
+
+    // Get whether user has seen the hint
+    getHasSeenHint() {
+        try {
+            const data = localStorage.getItem(this.KEYS.HAS_SEEN_HINT);
+            return data ? JSON.parse(data) : false;
+        } catch (e) {
+            console.error('Error loading hint status:', e);
+            return false;
         }
     }
 };
