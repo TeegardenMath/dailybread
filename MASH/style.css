@@ -199,8 +199,8 @@ button:hover {
     position: relative;
     z-index: 1001;
     margin-top: 60vh;
-    font-size: 1.2rem;
-    letter-spacing: 0.2rem;
+    font-size: 1rem;
+    letter-spacing: 0.15rem;
     animation: pulse 1.5s infinite;
     color: #7B68EE;
     font-weight: bold;

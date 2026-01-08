@@ -220,6 +220,7 @@ function startSpiralDrawing() {
     ctx.moveTo(centerX, centerY);
 
     const maxRadius = Math.min(canvas.width, canvas.height) / 2 - 50;
+    const spiralPoints = [];
 
     function drawSpiral() {
         if (!drawing) return;
@@ -229,6 +230,8 @@ function startSpiralDrawing() {
 
         const x = centerX + radius * Math.cos(angle);
         const y = centerY + radius * Math.sin(angle);
+
+        spiralPoints.push({ x, y, angle, radius });
 
         ctx.lineTo(x, y);
         ctx.stroke();
@@ -254,21 +257,55 @@ function startSpiralDrawing() {
             drawing = false;
             document.removeEventListener('keydown', stopSpiral);
 
-            // Calculate elimination number based on spiral length
-            const spiralLength = Math.floor(radius / 10);
-            gameState.spiralNumber = Math.max(2, spiralLength % 15 || 7);
+            // Draw line from center to edge at random angle
+            const lineAngle = Math.random() * Math.PI * 2;
+            const lineEndX = centerX + (maxRadius + 20) * Math.cos(lineAngle);
+            const lineEndY = centerY + (maxRadius + 20) * Math.sin(lineAngle);
 
-            // Hide spiral overlay
-            document.getElementById('spiral-overlay').classList.add('hidden');
+            ctx.strokeStyle = '#9484EE';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.moveTo(centerX, centerY);
+            ctx.lineTo(lineEndX, lineEndY);
+            ctx.stroke();
 
-            setTimeout(() => startElimination(), 500);
+            // Count intersections
+            let intersections = 0;
+            for (let i = 1; i < spiralPoints.length; i++) {
+                const p1 = spiralPoints[i - 1];
+                const p2 = spiralPoints[i];
+
+                if (lineIntersectsSegment(
+                    centerX, centerY, lineEndX, lineEndY,
+                    p1.x, p1.y, p2.x, p2.y
+                )) {
+                    intersections++;
+                }
+            }
+
+            gameState.spiralNumber = Math.max(2, intersections || 3);
+
+            setTimeout(() => {
+                document.getElementById('spiral-overlay').classList.add('hidden');
+                startElimination();
+            }, 1000);
         }
     });
+
+    function lineIntersectsSegment(x1, y1, x2, y2, x3, y3, x4, y4) {
+        const denom = ((y4 - y3) * (x2 - x1)) - ((x4 - x3) * (y2 - y1));
+        if (denom === 0) return false;
+
+        const ua = (((x4 - x3) * (y1 - y3)) - ((y4 - y3) * (x1 - x3))) / denom;
+        const ub = (((x2 - x1) * (y1 - y3)) - ((y2 - y1) * (x1 - x3))) / denom;
+
+        return (ua > 0.001 && ua < 0.999 && ub > 0.001 && ub < 0.999);
+    }
 }
 
 // Elimination phase
 function startElimination() {
-    document.getElementById('spiral-screen').classList.add('hidden');
+    document.getElementById('setup-screen').classList.add('hidden');
     document.getElementById('elimination-screen').classList.remove('hidden');
 
     const display = document.getElementById('elimination-display');
