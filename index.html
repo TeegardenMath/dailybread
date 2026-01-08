@@ -4,34 +4,25 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Create beautiful blackout poetry from classic literature">
-    <title>Daily Bread - Blackout Poetry Creator</title>
+    <title>Daily Bread</title>
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
     <div id="app">
-        <!-- Header -->
-        <header>
-            <h1>Daily Bread</h1>
-            <p class="tagline">Create blackout poetry from classic literature</p>
-        </header>
-
         <!-- Main Container -->
         <main id="main-container">
             <!-- Step 1: Text Selection -->
             <section id="text-selection-screen" class="screen active">
-                <h2>Choose Your Text</h2>
-
-                <!-- Curated Classics -->
-                <div class="curated-section">
-                    <h3>Popular Classics</h3>
-                    <div id="curated-books" class="book-grid">
+                <!-- Bookshelf -->
+                <div class="bookshelf-container">
+                    <div id="curated-books" class="bookshelf">
                         <!-- Will be populated by JavaScript -->
                     </div>
+                    <div class="shelf"></div>
                 </div>
 
                 <!-- Search Section -->
                 <div class="search-section">
-                    <h3>Search Project Gutenberg</h3>
                     <div class="search-box">
                         <input type="text" id="search-input" placeholder="Search by title or author...">
                         <button id="search-btn">Search</button>
