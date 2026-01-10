@@ -17,12 +17,12 @@ const FACE_CARD_ART = {
 
 // Opponents
 const OPPONENTS = [
-    { id: 'rookie', name: 'Rookie', winsRequired: 0, coinReward: 1, maxBet: 5, deckBias: null },
-    { id: 'dealer', name: 'The Dealer', winsRequired: 5, coinReward: 2, maxBet: 10, deckBias: { high: 0.1 } },
-    { id: 'shark', name: 'Card Shark', winsRequired: 15, coinReward: 3, maxBet: 20, deckBias: { high: 0.2 } },
-    { id: 'hustler', name: 'The Hustler', winsRequired: 30, coinReward: 5, maxBet: 50, deckBias: { high: 0.3 } },
-    { id: 'champion', name: 'Champion', winsRequired: 50, coinReward: 8, maxBet: 100, deckBias: { high: 0.4 } },
-    { id: 'legend', name: 'The Legend', winsRequired: 100, coinReward: 15, maxBet: 200, deckBias: { high: 0.5 } }
+    { id: 'rookie', name: 'Rookie', winsRequired: 0, coinReward: 5, maxBet: 5, deckBias: null },
+    { id: 'dealer', name: 'The Dealer', winsRequired: 5, coinReward: 10, maxBet: 10, deckBias: { high: 0.1 } },
+    { id: 'shark', name: 'Card Shark', winsRequired: 15, coinReward: 15, maxBet: 20, deckBias: { high: 0.2 } },
+    { id: 'hustler', name: 'The Hustler', winsRequired: 30, coinReward: 25, maxBet: 50, deckBias: { high: 0.3 } },
+    { id: 'champion', name: 'Champion', winsRequired: 50, coinReward: 40, maxBet: 100, deckBias: { high: 0.4 } },
+    { id: 'legend', name: 'The Legend', winsRequired: 100, coinReward: 75, maxBet: 200, deckBias: { high: 0.5 } }
 ];
 
 // Store items
@@ -42,7 +42,7 @@ const STORE_ITEMS = [
 ];
 
 // Game State
-let coins = 0;
+let coins = 10;
 let totalWins = 0;
 let playerCollection = [];
 let playerHand = [];
@@ -105,7 +105,7 @@ function loadGame() {
     const save = localStorage.getItem('warGame');
     if (save) {
         const data = JSON.parse(save);
-        coins = data.coins || 0;
+        coins = data.coins ?? 10;
         totalWins = data.totalWins || 0;
         playerCollection = data.playerCollection || [];
         boosterPacks = data.boosterPacks || [];
