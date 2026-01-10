@@ -7,64 +7,150 @@ const SUIT_SYMBOLS = {
     spades: '\u2660'
 };
 const VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
+const CARD_VALUES = { '2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8, '9': 9, '10': 10, 'J': 10, 'Q': 10, 'K': 10, 'A': 11 };
 
-// Face card art (emoji placeholders)
 const FACE_CARD_ART = {
     'J': ['🤴', '🧙', '🎭', '🗡️'],
     'Q': ['👸', '🧝', '🌹', '💎'],
     'K': ['👑', '🦁', '⚔️', '🏰']
 };
 
+// Opponents
+const OPPONENTS = [
+    { id: 'rookie', name: 'Rookie', winsRequired: 0, coinReward: 1, maxBet: 5, deckBias: null },
+    { id: 'dealer', name: 'The Dealer', winsRequired: 5, coinReward: 2, maxBet: 10, deckBias: { high: 0.1 } },
+    { id: 'shark', name: 'Card Shark', winsRequired: 15, coinReward: 3, maxBet: 20, deckBias: { high: 0.2 } },
+    { id: 'hustler', name: 'The Hustler', winsRequired: 30, coinReward: 5, maxBet: 50, deckBias: { high: 0.3 } },
+    { id: 'champion', name: 'Champion', winsRequired: 50, coinReward: 8, maxBet: 100, deckBias: { high: 0.4 } },
+    { id: 'legend', name: 'The Legend', winsRequired: 100, coinReward: 15, maxBet: 200, deckBias: { high: 0.5 } }
+];
+
+// Store items
+const STORE_ITEMS = [
+    { id: 'booster', name: 'Booster Pack', desc: '15 random cards', price: 1, type: 'consumable', repeatable: true },
+    { id: 'speed2x', name: 'Speed 2x', desc: 'Unlock 2x speed', price: 10, type: 'upgrade', tier: 1 },
+    { id: 'speed3x', name: 'Speed 3x', desc: 'Unlock 3x speed', price: 20, type: 'upgrade', tier: 2, requires: 'speed2x' },
+    { id: 'speed5x', name: 'Speed 5x', desc: 'Unlock 5x speed', price: 40, type: 'upgrade', tier: 3, requires: 'speed3x' },
+    { id: 'speed10x', name: 'Speed 10x', desc: 'Unlock 10x speed', price: 80, type: 'upgrade', tier: 4, requires: 'speed5x' },
+    { id: 'back_blue', name: 'Blue Deck', desc: 'Blue card backs', price: 5, type: 'cosmetic' },
+    { id: 'back_purple', name: 'Purple Deck', desc: 'Purple card backs', price: 10, type: 'cosmetic' },
+    { id: 'back_gold', name: 'Gold Deck', desc: 'Gold card backs', price: 25, type: 'cosmetic' },
+    { id: 'blackjack', name: 'Blackjack', desc: '+1 coin when cards sum to 21', price: 15, type: 'upgrade', winsRequired: 10 },
+    { id: 'betting', name: 'High Stakes', desc: 'Unlock betting on games', price: 20, type: 'upgrade', winsRequired: 20 },
+    { id: 'deck_up', name: 'Bigger Deck', desc: '+4 cards to deck', price: 15, type: 'deck_mod', repeatable: true },
+    { id: 'deck_down', name: 'Smaller Deck', desc: '-4 cards from deck', price: 15, type: 'deck_mod', repeatable: true }
+];
+
 // Game State
-let playerCollection = []; // Player's permanent 52-card collection
-let playerHand = [];       // Cards in hand during current game
+let coins = 0;
+let totalWins = 0;
+let playerCollection = [];
+let playerHand = [];
 let opponentHand = [];
-let playerDiscard = [];    // Won cards pile during current game
+let playerDiscard = [];
 let opponentDiscard = [];
 let boosterPacks = [];
 let currentPackCards = [];
 let currentPackIndex = 0;
 let selectedDeckCard = null;
 let selectedNewCard = null;
-let gameSpeed = 800;
-let isPlaying = true;
-let gameEnding = false;    // Prevents multiple endGame calls
 
-// Rarity weights (lower = rarer)
+let baseGameSpeed = 800;
+let currentSpeedMultiplier = 1;
+let unlockedSpeeds = [1];
+let isPlaying = true;
+let gameEnding = false;
+
+let currentOpponent = OPPONENTS[0];
+let currentBet = 0;
+let purchasedItems = [];
+let deckBack = '';
+let hasBlackjack = false;
+let hasBetting = false;
+let targetDeckSize = 52;
+
+// Rarity weights
 const RARITY_WEIGHTS = {
     '2': 100, '3': 95, '4': 90, '5': 85, '6': 80,
     '7': 75, '8': 70, '9': 65, '10': 60,
     'J': 40, 'Q': 35, 'K': 30, 'A': 20
 };
 
-// Initialize game
+// Initialize
 function init() {
-    // Create player's permanent collection
-    playerCollection = createStandardDeck();
-
+    loadGame();
+    if (playerCollection.length === 0) {
+        playerCollection = createStandardDeck();
+    }
     setupEventListeners();
+    renderOpponents();
+    renderStore();
+    renderSpeedControls();
+    updateUI();
     startNewGame();
     startGameLoop();
 }
 
-// Create a standard 52-card deck
+// Save/Load
+function saveGame() {
+    const save = {
+        coins, totalWins, playerCollection, boosterPacks,
+        purchasedItems, deckBack, unlockedSpeeds, currentSpeedMultiplier,
+        currentOpponent: currentOpponent.id, targetDeckSize
+    };
+    localStorage.setItem('warGame', JSON.stringify(save));
+}
+
+function loadGame() {
+    const save = localStorage.getItem('warGame');
+    if (save) {
+        const data = JSON.parse(save);
+        coins = data.coins || 0;
+        totalWins = data.totalWins || 0;
+        playerCollection = data.playerCollection || [];
+        boosterPacks = data.boosterPacks || [];
+        purchasedItems = data.purchasedItems || [];
+        deckBack = data.deckBack || '';
+        unlockedSpeeds = data.unlockedSpeeds || [1];
+        currentSpeedMultiplier = data.currentSpeedMultiplier || 1;
+        targetDeckSize = data.targetDeckSize || 52;
+        currentOpponent = OPPONENTS.find(o => o.id === data.currentOpponent) || OPPONENTS[0];
+
+        hasBlackjack = purchasedItems.includes('blackjack');
+        hasBetting = purchasedItems.includes('betting');
+    }
+}
+
+// Deck creation
 function createStandardDeck() {
     const deck = [];
     for (const suit of SUITS) {
         for (const value of VALUES) {
             deck.push({
-                suit,
-                value,
+                suit, value,
                 id: `${value}_${suit}_${Date.now()}_${Math.random()}`,
-                foil: false,
-                specialArt: false
+                foil: false, specialArt: false
             });
         }
     }
     return deck;
 }
 
-// Fisher-Yates shuffle
+function createOpponentDeck(opponent) {
+    const deck = createStandardDeck();
+    if (opponent.deckBias?.high) {
+        // Replace some low cards with high cards
+        const highCards = ['10', 'J', 'Q', 'K', 'A'];
+        const replaceCount = Math.floor(52 * opponent.deckBias.high);
+        for (let i = 0; i < replaceCount && i < deck.length; i++) {
+            if (!highCards.includes(deck[i].value)) {
+                deck[i].value = highCards[Math.floor(Math.random() * highCards.length)];
+            }
+        }
+    }
+    return deck;
+}
+
 function shuffleDeck(deck) {
     for (let i = deck.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
@@ -72,83 +158,81 @@ function shuffleDeck(deck) {
     }
 }
 
-// Start a new game with current collections
+// Game flow
 function startNewGame() {
     gameEnding = false;
 
-    // Copy player's collection for this game
-    playerHand = playerCollection.map(card => ({...card}));
+    // Use player's collection (adjusted to target size)
+    let gameDeck = [...playerCollection];
+    while (gameDeck.length < targetDeckSize) {
+        const card = createStandardDeck()[Math.floor(Math.random() * 52)];
+        card.id = `filler_${Date.now()}_${Math.random()}`;
+        gameDeck.push(card);
+    }
+    if (gameDeck.length > targetDeckSize) {
+        gameDeck = gameDeck.slice(0, targetDeckSize);
+    }
+
+    playerHand = gameDeck.map(c => ({...c}));
     shuffleDeck(playerHand);
 
-    // Create fresh opponent deck
-    opponentHand = createStandardDeck();
+    opponentHand = createOpponentDeck(currentOpponent);
     shuffleDeck(opponentHand);
 
     playerDiscard = [];
     opponentDiscard = [];
 
-    // Clear played cards
     document.getElementById('player-played').innerHTML = '';
     document.getElementById('opponent-played').innerHTML = '';
+    document.getElementById('opponent-name').textContent = currentOpponent.name;
 
     updateDeckCounts();
+    updateDeckBack();
 }
 
-// Get card value for comparison
 function getCardPower(card) {
     return VALUES.indexOf(card.value);
 }
 
-// Create card DOM element
+function getCardValue(card) {
+    return CARD_VALUES[card.value];
+}
+
+// Card rendering
 function createCardElement(card) {
     const div = document.createElement('div');
     div.className = 'card';
-
-    const isRed = card.suit === 'hearts' || card.suit === 'diamonds';
-    div.classList.add(isRed ? 'red' : 'black');
-
+    div.classList.add(card.suit === 'hearts' || card.suit === 'diamonds' ? 'red' : 'black');
     if (card.foil) div.classList.add('foil');
     if (card.specialArt) div.classList.add('special-art');
 
     const symbol = SUIT_SYMBOLS[card.suit];
-    const displayValue = card.value;
-
     let centerContent = symbol;
     if (card.specialArt && ['J', 'Q', 'K'].includes(card.value)) {
-        const artIndex = SUITS.indexOf(card.suit);
-        centerContent = FACE_CARD_ART[card.value][artIndex];
+        centerContent = FACE_CARD_ART[card.value][SUITS.indexOf(card.suit)];
     }
 
     div.innerHTML = `
-        <div class="card-corner top">${displayValue}<br>${symbol}</div>
+        <div class="card-corner top">${card.value}<br>${symbol}</div>
         <div class="card-center">${centerContent}</div>
-        <div class="card-corner bottom">${displayValue}<br>${symbol}</div>
+        <div class="card-corner bottom">${card.value}<br>${symbol}</div>
     `;
-
     div.dataset.cardId = card.id;
     return div;
 }
 
-// Play a round
+// Game loop
 function playRound() {
     if (!isPlaying || gameEnding) return;
 
-    // Check if hands are empty, reshuffle discard
     if (playerHand.length === 0) {
-        if (playerDiscard.length === 0) {
-            endGame(false);
-            return;
-        }
+        if (playerDiscard.length === 0) { endGame(false); return; }
         playerHand = [...playerDiscard];
         playerDiscard = [];
         shuffleDeck(playerHand);
     }
-
     if (opponentHand.length === 0) {
-        if (opponentDiscard.length === 0) {
-            endGame(true);
-            return;
-        }
+        if (opponentDiscard.length === 0) { endGame(true); return; }
         opponentHand = [...opponentDiscard];
         opponentDiscard = [];
         shuffleDeck(opponentHand);
@@ -160,41 +244,38 @@ function playRound() {
     displayPlayedCard(playerCard, 'player');
     displayPlayedCard(opponentCard, 'opponent');
 
+    // Check blackjack bonus
+    if (hasBlackjack) {
+        const sum = getCardValue(playerCard) + getCardValue(opponentCard);
+        if (sum === 21) {
+            coins++;
+            showBlackjackBonus();
+            updateUI();
+            saveGame();
+        }
+    }
+
     setTimeout(() => {
         if (!gameEnding) {
             compareCards(playerCard, opponentCard, [playerCard], [opponentCard]);
         }
-    }, 300);
+    }, 200 / currentSpeedMultiplier);
 }
 
-// Display a played card
 function displayPlayedCard(card, side) {
     const slot = document.getElementById(`${side}-played`);
     slot.innerHTML = '';
-
     const cardEl = createCardElement(card);
     cardEl.classList.add('playing');
     slot.appendChild(cardEl);
-
     updateDeckCounts();
 }
 
-// Update deck count displays
-function updateDeckCounts() {
-    const playerTotal = playerHand.length + playerDiscard.length;
-    const opponentTotal = opponentHand.length + opponentDiscard.length;
-
-    document.getElementById('player-count').textContent = playerTotal;
-    document.getElementById('opponent-count').textContent = opponentTotal;
-}
-
-// Compare cards and determine winner
 function compareCards(playerCard, opponentCard, playerPile, opponentPile) {
     if (gameEnding) return;
 
     const playerPower = getCardPower(playerCard);
     const opponentPower = getCardPower(opponentCard);
-
     const playerSlot = document.getElementById('player-played');
     const opponentSlot = document.getElementById('opponent-played');
 
@@ -210,11 +291,9 @@ function compareCards(playerCard, opponentCard, playerPile, opponentPile) {
         handleWar(playerPile, opponentPile);
         return;
     }
-
     checkGameEnd();
 }
 
-// Handle war (tie)
 function handleWar(playerPile, opponentPile) {
     if (gameEnding) return;
 
@@ -222,252 +301,351 @@ function handleWar(playerPile, opponentPile) {
     battleZone.classList.add('battle-flash');
     setTimeout(() => battleZone.classList.remove('battle-flash'), 600);
 
-    const playerWarCards = [];
-    const opponentWarCards = [];
+    const playerWarCards = [], opponentWarCards = [];
 
     for (let i = 0; i < 4; i++) {
         if (playerHand.length === 0 && playerDiscard.length > 0) {
-            playerHand = [...playerDiscard];
-            playerDiscard = [];
-            shuffleDeck(playerHand);
+            playerHand = [...playerDiscard]; playerDiscard = []; shuffleDeck(playerHand);
         }
         if (opponentHand.length === 0 && opponentDiscard.length > 0) {
-            opponentHand = [...opponentDiscard];
-            opponentDiscard = [];
-            shuffleDeck(opponentHand);
+            opponentHand = [...opponentDiscard]; opponentDiscard = []; shuffleDeck(opponentHand);
         }
-
-        if (playerHand.length > 0) {
-            playerWarCards.push(playerHand.shift());
-        }
-        if (opponentHand.length > 0) {
-            opponentWarCards.push(opponentHand.shift());
-        }
+        if (playerHand.length > 0) playerWarCards.push(playerHand.shift());
+        if (opponentHand.length > 0) opponentWarCards.push(opponentHand.shift());
     }
 
     if (playerWarCards.length === 0) {
         opponentDiscard.push(...playerPile, ...opponentPile);
-        checkGameEnd();
-        return;
+        checkGameEnd(); return;
     }
     if (opponentWarCards.length === 0) {
         playerDiscard.push(...playerPile, ...opponentPile);
-        checkGameEnd();
-        return;
+        checkGameEnd(); return;
     }
 
     setTimeout(() => {
         if (gameEnding) return;
-
         const newPlayerCard = playerWarCards[playerWarCards.length - 1];
         const newOpponentCard = opponentWarCards[opponentWarCards.length - 1];
-
         displayPlayedCard(newPlayerCard, 'player');
         displayPlayedCard(newOpponentCard, 'opponent');
 
         setTimeout(() => {
             if (!gameEnding) {
-                compareCards(
-                    newPlayerCard,
-                    newOpponentCard,
+                compareCards(newPlayerCard, newOpponentCard,
                     [...playerPile, ...playerWarCards],
-                    [...opponentPile, ...opponentWarCards]
-                );
+                    [...opponentPile, ...opponentWarCards]);
             }
-        }, 300);
-    }, 400);
+        }, 200 / currentSpeedMultiplier);
+    }, 300 / currentSpeedMultiplier);
 }
 
-// Check if game has ended
 function checkGameEnd() {
     if (gameEnding) return;
-
     const playerTotal = playerHand.length + playerDiscard.length;
     const opponentTotal = opponentHand.length + opponentDiscard.length;
-
-    if (playerTotal === 0) {
-        endGame(false);
-    } else if (opponentTotal === 0) {
-        endGame(true);
-    }
+    if (playerTotal === 0) endGame(false);
+    else if (opponentTotal === 0) endGame(true);
 }
 
-// End the current game
 function endGame(playerWon) {
-    if (gameEnding) return; // Prevent multiple calls
+    if (gameEnding) return;
     gameEnding = true;
 
-    showNotification(playerWon);
-
     if (playerWon) {
-        awardBoosterPack();
+        totalWins++;
+        let reward = currentOpponent.coinReward;
+        if (currentBet > 0) reward += currentBet * 2;
+        coins += reward;
+        showNotification(`Victory! +${reward} coins`, 'win');
+    } else {
+        if (currentBet > 0) {
+            showNotification(`Defeat! Lost ${currentBet} coins`, 'lose');
+        } else {
+            showNotification('Defeat!', 'lose');
+        }
     }
 
-    setTimeout(() => {
-        startNewGame();
-    }, 1500);
+    currentBet = 0;
+    updateUI();
+    renderStore();
+    renderOpponents();
+    saveGame();
+
+    setTimeout(() => startNewGame(), 1500 / currentSpeedMultiplier);
 }
 
-// Show win/lose notification
-function showNotification(isWin) {
-    const container = document.getElementById('notifications');
-    const notification = document.createElement('div');
-    notification.className = `notification ${isWin ? 'win' : 'lose'}`;
-    notification.textContent = isWin ? 'Victory! +1 Booster Pack' : 'Defeat';
-    container.appendChild(notification);
-
-    setTimeout(() => {
-        notification.remove();
-    }, 3000);
+function updateDeckCounts() {
+    document.getElementById('player-count').textContent = playerHand.length + playerDiscard.length;
+    document.getElementById('opponent-count').textContent = opponentHand.length + opponentDiscard.length;
 }
 
-// Award a booster pack
-function awardBoosterPack() {
-    const pack = generateBoosterPack();
-    boosterPacks.push(pack);
+function updateDeckBack() {
+    const deckCard = document.getElementById('player-deck-card');
+    deckCard.className = 'deck-card';
+    if (deckBack) deckCard.classList.add(deckBack);
+}
+
+// UI Updates
+function updateUI() {
+    document.getElementById('coin-count').textContent = coins;
+    document.getElementById('wins-count').textContent = `${totalWins} wins`;
+    document.getElementById('current-bet').textContent = currentBet;
+
+    const bettingArea = document.getElementById('betting-area');
+    bettingArea.classList.toggle('hidden', !hasBetting);
+
     renderBoosterPacks();
 }
 
-// Generate a booster pack with 15 cards
-function generateBoosterPack() {
+function showNotification(text, type) {
+    const container = document.getElementById('notifications');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.textContent = text;
+    container.appendChild(notification);
+    setTimeout(() => notification.remove(), 3000);
+}
+
+function showBlackjackBonus() {
+    const bonus = document.getElementById('blackjack-bonus');
+    bonus.classList.remove('hidden');
+    setTimeout(() => bonus.classList.add('hidden'), 1000);
+}
+
+// Opponents
+function renderOpponents() {
+    const list = document.getElementById('opponent-list');
+    list.innerHTML = '';
+
+    OPPONENTS.forEach(opp => {
+        const div = document.createElement('div');
+        div.className = 'opponent-item';
+
+        const unlocked = totalWins >= opp.winsRequired;
+        if (!unlocked) div.classList.add('locked');
+        if (opp.id === currentOpponent.id) div.classList.add('selected');
+
+        div.innerHTML = `
+            <div class="opponent-item-name">${opp.name}</div>
+            <div class="opponent-item-info">+${opp.coinReward} coins</div>
+            ${!unlocked ? `<div class="opponent-item-unlock">${opp.winsRequired - totalWins} more wins</div>` : ''}
+        `;
+
+        if (unlocked) {
+            div.addEventListener('click', () => selectOpponent(opp));
+        }
+        list.appendChild(div);
+    });
+}
+
+function selectOpponent(opponent) {
+    currentOpponent = opponent;
+    renderOpponents();
+    startNewGame();
+    saveGame();
+}
+
+// Store
+function renderStore() {
+    const container = document.getElementById('store-items');
+    container.innerHTML = '';
+
+    STORE_ITEMS.forEach(item => {
+        if (item.winsRequired && totalWins < item.winsRequired) return;
+        if (item.requires && !purchasedItems.includes(item.requires)) return;
+        if (!item.repeatable && purchasedItems.includes(item.id)) return;
+        if (item.id === 'deck_down' && targetDeckSize <= 20) return;
+        if (item.id === 'deck_up' && targetDeckSize >= 100) return;
+
+        const div = document.createElement('div');
+        div.className = 'store-item';
+
+        const canAfford = coins >= item.price;
+        if (!canAfford) div.classList.add('disabled');
+
+        div.innerHTML = `
+            <div class="store-item-name">${item.name}</div>
+            <div class="store-item-desc">${item.desc}</div>
+            <div class="store-item-price">🪙 ${item.price}</div>
+        `;
+
+        if (canAfford) {
+            div.addEventListener('click', () => purchaseItem(item));
+        }
+        container.appendChild(div);
+    });
+}
+
+function purchaseItem(item) {
+    if (coins < item.price) return;
+
+    coins -= item.price;
+
+    switch (item.type) {
+        case 'consumable':
+            if (item.id === 'booster') awardBoosterPack();
+            break;
+        case 'upgrade':
+            purchasedItems.push(item.id);
+            if (item.id.startsWith('speed')) {
+                const speed = parseInt(item.id.replace('speed', '').replace('x', ''));
+                unlockedSpeeds.push(speed);
+                renderSpeedControls();
+            }
+            if (item.id === 'blackjack') hasBlackjack = true;
+            if (item.id === 'betting') hasBetting = true;
+            break;
+        case 'cosmetic':
+            purchasedItems.push(item.id);
+            deckBack = item.id.replace('back_', 'back-');
+            updateDeckBack();
+            break;
+        case 'deck_mod':
+            if (item.id === 'deck_up') targetDeckSize += 4;
+            if (item.id === 'deck_down') targetDeckSize -= 4;
+            break;
+    }
+
+    updateUI();
+    renderStore();
+    saveGame();
+}
+
+// Speed controls
+function renderSpeedControls() {
+    const container = document.getElementById('speed-controls');
+    container.innerHTML = '';
+
+    unlockedSpeeds.sort((a, b) => a - b).forEach(speed => {
+        const btn = document.createElement('button');
+        btn.className = 'speed-btn';
+        if (speed === currentSpeedMultiplier) btn.classList.add('active');
+        btn.textContent = `${speed}x`;
+        btn.addEventListener('click', () => setSpeed(speed));
+        container.appendChild(btn);
+    });
+}
+
+function setSpeed(speed) {
+    currentSpeedMultiplier = speed;
+    renderSpeedControls();
+    saveGame();
+}
+
+// Betting
+function adjustBet(delta) {
+    const maxBet = Math.min(coins, currentOpponent.maxBet);
+    currentBet = Math.max(0, Math.min(maxBet, currentBet + delta));
+    if (currentBet > 0) coins -= delta > 0 ? delta : 0;
+    if (delta < 0 && currentBet >= 0) coins -= delta;
+    updateUI();
+}
+
+// Booster packs
+function awardBoosterPack() {
     const cards = [];
     let hasFoil = false;
-
     for (let i = 0; i < 15; i++) {
         const card = generateRandomCard();
-
-        if (i === 14 && !hasFoil) {
-            card.foil = true;
-        }
-
+        if (i === 14 && !hasFoil) card.foil = true;
         if (card.foil) hasFoil = true;
         cards.push(card);
     }
-
-    return cards;
+    boosterPacks.push(cards);
+    renderBoosterPacks();
+    saveGame();
 }
 
-// Generate a random card with rarity considerations
 function generateRandomCard() {
     const totalWeight = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
     let random = Math.random() * totalWeight;
     let selectedValue = '2';
-
     for (const [value, weight] of Object.entries(RARITY_WEIGHTS)) {
         random -= weight;
-        if (random <= 0) {
-            selectedValue = value;
-            break;
-        }
+        if (random <= 0) { selectedValue = value; break; }
     }
-
     const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
-    const isFoil = Math.random() < 0.10;
-    const isSpecialArt = ['J', 'Q', 'K'].includes(selectedValue) && Math.random() < 0.20;
-
     return {
-        suit,
-        value: selectedValue,
+        suit, value: selectedValue,
         id: `${selectedValue}_${suit}_${Date.now()}_${Math.random()}`,
-        foil: isFoil,
-        specialArt: isSpecialArt
+        foil: Math.random() < 0.10,
+        specialArt: ['J', 'Q', 'K'].includes(selectedValue) && Math.random() < 0.20
     };
 }
 
-// Render booster packs
 function renderBoosterPacks() {
     const container = document.getElementById('booster-packs');
     container.innerHTML = '';
-
     boosterPacks.forEach((pack, index) => {
-        const packEl = document.createElement('div');
-        packEl.className = 'booster-pack';
-        packEl.addEventListener('click', () => openBoosterPack(index));
-        container.appendChild(packEl);
+        const div = document.createElement('div');
+        div.className = 'booster-pack';
+        div.addEventListener('click', () => openBoosterPack(index));
+        container.appendChild(div);
     });
 }
 
-// Open a booster pack
 function openBoosterPack(index) {
     const pack = boosterPacks[index];
     if (!pack) return;
-
     playPackOpenSound();
 
     const packEls = document.querySelectorAll('.booster-pack');
-    if (packEls[index]) {
-        packEls[index].classList.add('pack-opening');
-    }
+    if (packEls[index]) packEls[index].classList.add('pack-opening');
 
     setTimeout(() => {
         boosterPacks.splice(index, 1);
         renderBoosterPacks();
-
         currentPackCards = pack;
         currentPackIndex = 0;
         showPackOpener();
+        saveGame();
     }, 500);
 }
 
-// Play pack open sound
 function playPackOpenSound() {
     try {
-        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
-
-        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
-
-        oscillator.start(audioContext.currentTime);
-        oscillator.stop(audioContext.currentTime + 0.2);
-    } catch (e) {
-        // Audio not supported
-    }
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+    } catch (e) {}
 }
 
-// Show pack opener overlay
+// Pack opener overlay
 function showPackOpener() {
     isPlaying = false;
-    const overlay = document.getElementById('pack-opener');
-    overlay.classList.remove('hidden');
-
+    document.getElementById('pack-opener').classList.remove('hidden');
     renderCurrentPackCard();
     updateCardStack();
     updateCardCounter();
     updateNavArrows();
 }
 
-// Render current card in pack opener
 function renderCurrentPackCard() {
     const container = document.getElementById('current-card');
     container.innerHTML = '';
-
     if (currentPackCards[currentPackIndex]) {
-        const cardEl = createCardElement(currentPackCards[currentPackIndex]);
-        container.appendChild(cardEl);
+        container.appendChild(createCardElement(currentPackCards[currentPackIndex]));
     }
 }
 
-// Update card stack visualization
 function updateCardStack() {
     const stack = document.getElementById('card-stack');
     stack.innerHTML = '';
-
-    const remainingCards = currentPackCards.length - currentPackIndex - 1;
-    const visibleStack = Math.min(remainingCards, 5);
-
-    for (let i = visibleStack - 1; i >= 0; i--) {
-        const cardIndex = currentPackIndex + 1 + i;
-        if (cardIndex < currentPackCards.length) {
-            const card = currentPackCards[cardIndex];
-            const cardEl = createCardElement(card);
+    const remaining = currentPackCards.length - currentPackIndex - 1;
+    const visible = Math.min(remaining, 5);
+    for (let i = visible - 1; i >= 0; i--) {
+        const idx = currentPackIndex + 1 + i;
+        if (idx < currentPackCards.length) {
+            const cardEl = createCardElement(currentPackCards[idx]);
             cardEl.classList.add('stack-card-visual');
             cardEl.style.transform = `translateX(${(i + 1) * 8}px)`;
             cardEl.style.zIndex = -i - 1;
@@ -476,244 +654,199 @@ function updateCardStack() {
     }
 }
 
-// Update card counter
 function updateCardCounter() {
-    const counter = document.getElementById('card-counter');
-    counter.textContent = `Card ${currentPackIndex + 1} of ${currentPackCards.length}`;
+    document.getElementById('card-counter').textContent =
+        `Card ${currentPackIndex + 1} of ${currentPackCards.length}`;
 }
 
-// Update navigation arrows
 function updateNavArrows() {
     document.getElementById('prev-card').disabled = currentPackIndex === 0;
     document.getElementById('next-card').disabled = currentPackIndex === currentPackCards.length - 1;
 }
 
-// Navigate pack cards
-function navigatePackCards(direction) {
-    currentPackIndex += direction;
-    currentPackIndex = Math.max(0, Math.min(currentPackIndex, currentPackCards.length - 1));
-
+function navigatePackCards(dir) {
+    currentPackIndex = Math.max(0, Math.min(currentPackCards.length - 1, currentPackIndex + dir));
     renderCurrentPackCard();
     updateCardStack();
     updateCardCounter();
     updateNavArrows();
 }
 
-// Show swap screen
+// Swap screen
 function showSwapScreen() {
     document.getElementById('pack-opener').classList.add('hidden');
     document.getElementById('swap-screen').classList.remove('hidden');
-
     selectedDeckCard = null;
     selectedNewCard = null;
-
     renderSwapScreenDecks();
     updateSwapButton();
 }
 
-// Render decks in swap screen
 function renderSwapScreenDecks() {
     const deckGrid = document.getElementById('your-deck-grid');
     const newGrid = document.getElementById('new-cards-grid');
-
     deckGrid.innerHTML = '';
     newGrid.innerHTML = '';
 
-    // Sort player's permanent collection by suit and value
-    const sortedCollection = [...playerCollection].sort((a, b) => {
+    const sorted = [...playerCollection].sort((a, b) => {
         const suitDiff = SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit);
-        if (suitDiff !== 0) return suitDiff;
-        return VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
+        return suitDiff !== 0 ? suitDiff : VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
     });
 
-    sortedCollection.forEach(card => {
-        const cardEl = createCardElement(card);
-        cardEl.addEventListener('click', () => selectDeckCard(card, cardEl));
-        deckGrid.appendChild(cardEl);
+    sorted.forEach(card => {
+        const el = createCardElement(card);
+        el.addEventListener('click', () => selectDeckCard(card, el));
+        deckGrid.appendChild(el);
     });
 
     currentPackCards.forEach(card => {
-        const cardEl = createCardElement(card);
-        cardEl.addEventListener('click', () => selectNewCard(card, cardEl));
-        newGrid.appendChild(cardEl);
+        const el = createCardElement(card);
+        el.addEventListener('click', () => selectNewCard(card, el));
+        newGrid.appendChild(el);
     });
 }
 
-// Select a card from player's deck
-function selectDeckCard(card, element) {
-    document.querySelectorAll('#your-deck-grid .card.selected').forEach(el => {
-        el.classList.remove('selected');
-    });
-
-    element.classList.add('selected');
+function selectDeckCard(card, el) {
+    document.querySelectorAll('#your-deck-grid .card.selected').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
     selectedDeckCard = card;
-
-    const swapOut = document.getElementById('swap-out');
-    swapOut.innerHTML = '';
-    swapOut.appendChild(createCardElement(card));
-
+    const slot = document.getElementById('swap-out');
+    slot.innerHTML = '';
+    slot.appendChild(createCardElement(card));
     updateSwapButton();
 }
 
-// Select a card from new cards
-function selectNewCard(card, element) {
-    document.querySelectorAll('#new-cards-grid .card.selected').forEach(el => {
-        el.classList.remove('selected');
-    });
-
-    element.classList.add('selected');
+function selectNewCard(card, el) {
+    document.querySelectorAll('#new-cards-grid .card.selected').forEach(e => e.classList.remove('selected'));
+    el.classList.add('selected');
     selectedNewCard = card;
-
-    const swapIn = document.getElementById('swap-in');
-    swapIn.innerHTML = '';
-    swapIn.appendChild(createCardElement(card));
-
+    const slot = document.getElementById('swap-in');
+    slot.innerHTML = '';
+    slot.appendChild(createCardElement(card));
     updateSwapButton();
 }
 
-// Update swap button state
 function updateSwapButton() {
-    const swapBtn = document.getElementById('swap-btn');
-    swapBtn.disabled = !selectedDeckCard || !selectedNewCard;
+    document.getElementById('swap-btn').disabled = !selectedDeckCard || !selectedNewCard;
 }
 
-// Perform swap
 function performSwap() {
     if (!selectedDeckCard || !selectedNewCard) return;
-
-    // Find and replace in player's permanent collection
-    const index = playerCollection.findIndex(c => c.id === selectedDeckCard.id);
-    if (index !== -1) {
-        playerCollection[index] = selectedNewCard;
-    }
-
-    // Remove from new cards
-    const newIndex = currentPackCards.findIndex(c => c.id === selectedNewCard.id);
-    if (newIndex !== -1) {
-        currentPackCards.splice(newIndex, 1);
-    }
-
-    // Reset selection
+    const idx = playerCollection.findIndex(c => c.id === selectedDeckCard.id);
+    if (idx !== -1) playerCollection[idx] = selectedNewCard;
+    const newIdx = currentPackCards.findIndex(c => c.id === selectedNewCard.id);
+    if (newIdx !== -1) currentPackCards.splice(newIdx, 1);
     selectedDeckCard = null;
     selectedNewCard = null;
-
     document.getElementById('swap-out').innerHTML = '<span>Select from deck</span>';
     document.getElementById('swap-in').innerHTML = '<span>Select new card</span>';
-
     renderSwapScreenDecks();
     updateSwapButton();
+    saveGame();
 }
 
-// Discard remaining cards and close swap screen
 function discardRemainingCards() {
     currentPackCards = [];
     document.getElementById('swap-screen').classList.add('hidden');
     isPlaying = true;
+    saveGame();
 }
 
-// Show deck viewer
+// Deck viewer
 function showDeckViewer() {
     isPlaying = false;
-    const overlay = document.getElementById('deck-viewer');
-    overlay.classList.remove('hidden');
-
+    document.getElementById('deck-viewer').classList.remove('hidden');
     const grid = document.getElementById('deck-grid');
     grid.innerHTML = '';
 
-    // Sort player's permanent collection
-    const sortedCollection = [...playerCollection].sort((a, b) => {
+    const sorted = [...playerCollection].sort((a, b) => {
         const suitDiff = SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit);
-        if (suitDiff !== 0) return suitDiff;
-        return VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
+        return suitDiff !== 0 ? suitDiff : VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
     });
 
-    sortedCollection.forEach(card => {
-        const cardEl = createCardElement(card);
-        cardEl.addEventListener('mouseenter', (e) => showMagnifiedCard(card, e));
-        cardEl.addEventListener('mouseleave', hideMagnifiedCard);
-        cardEl.addEventListener('click', (e) => {
+    sorted.forEach(card => {
+        const el = createCardElement(card);
+        el.addEventListener('mouseenter', e => showMagnifiedCard(card, e));
+        el.addEventListener('mouseleave', hideMagnifiedCard);
+        el.addEventListener('click', e => {
             showMagnifiedCard(card, e);
             setTimeout(hideMagnifiedCard, 2000);
         });
-        grid.appendChild(cardEl);
+        grid.appendChild(el);
     });
 }
 
-// Show magnified card
 function showMagnifiedCard(card, event) {
-    const magnified = document.getElementById('magnified-card');
-    magnified.innerHTML = '';
-    magnified.classList.remove('hidden');
-
-    const cardEl = createCardElement(card);
-    magnified.appendChild(cardEl);
-
+    const mag = document.getElementById('magnified-card');
+    mag.innerHTML = '';
+    mag.classList.remove('hidden');
+    mag.appendChild(createCardElement(card));
     const rect = event.target.getBoundingClientRect();
     let x = rect.left + rect.width / 2;
     let y = rect.top - 120;
-
     if (y < 10) y = rect.bottom + 10;
     if (x < 100) x = 100;
     if (x > window.innerWidth - 100) x = window.innerWidth - 100;
-
-    magnified.style.left = `${x}px`;
-    magnified.style.top = `${y}px`;
+    mag.style.left = `${x}px`;
+    mag.style.top = `${y}px`;
 }
 
-// Hide magnified card
 function hideMagnifiedCard() {
-    const magnified = document.getElementById('magnified-card');
-    magnified.classList.add('hidden');
+    document.getElementById('magnified-card').classList.add('hidden');
 }
 
-// Close deck viewer
 function closeDeckViewer() {
     document.getElementById('deck-viewer').classList.add('hidden');
     isPlaying = true;
 }
 
-// Setup event listeners
+// Event listeners
 function setupEventListeners() {
-    // Deck viewer - click on deck or label
     document.getElementById('player-deck').addEventListener('click', showDeckViewer);
     document.getElementById('close-deck-viewer').addEventListener('click', closeDeckViewer);
-    document.getElementById('deck-viewer').addEventListener('click', (e) => {
+    document.getElementById('deck-viewer').addEventListener('click', e => {
         if (e.target.id === 'deck-viewer') closeDeckViewer();
     });
 
-    // Pack opener navigation
     document.getElementById('prev-card').addEventListener('click', () => navigatePackCards(-1));
     document.getElementById('next-card').addEventListener('click', () => navigatePackCards(1));
     document.getElementById('add-to-deck-btn').addEventListener('click', showSwapScreen);
 
-    // Keyboard navigation
-    document.addEventListener('keydown', (e) => {
-        const packOpener = document.getElementById('pack-opener');
-        if (!packOpener.classList.contains('hidden')) {
+    document.addEventListener('keydown', e => {
+        if (!document.getElementById('pack-opener').classList.contains('hidden')) {
             if (e.key === 'ArrowLeft') navigatePackCards(-1);
             if (e.key === 'ArrowRight') navigatePackCards(1);
             if (e.key === 'Escape') showSwapScreen();
         }
-
-        const deckViewer = document.getElementById('deck-viewer');
-        if (!deckViewer.classList.contains('hidden') && e.key === 'Escape') {
+        if (!document.getElementById('deck-viewer').classList.contains('hidden') && e.key === 'Escape') {
             closeDeckViewer();
         }
     });
 
-    // Swap screen
     document.getElementById('swap-btn').addEventListener('click', performSwap);
     document.getElementById('discard-btn').addEventListener('click', discardRemainingCards);
+
+    document.getElementById('bet-increase').addEventListener('click', () => {
+        if (currentBet < Math.min(coins + currentBet, currentOpponent.maxBet)) {
+            currentBet++;
+            updateUI();
+        }
+    });
+    document.getElementById('bet-decrease').addEventListener('click', () => {
+        if (currentBet > 0) {
+            currentBet--;
+            updateUI();
+        }
+    });
 }
 
-// Start game loop
+// Game loop
 function startGameLoop() {
     setInterval(() => {
         if (isPlaying && !gameEnding) {
             playRound();
         }
-    }, gameSpeed);
+    }, baseGameSpeed / currentSpeedMultiplier);
 }
 
-// Initialize on load
 document.addEventListener('DOMContentLoaded', init);

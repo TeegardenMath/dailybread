@@ -8,36 +8,82 @@
 </head>
 <body>
     <div id="game-container">
-        <!-- Play field where cards are played -->
-        <div id="play-field">
-            <div id="opponent-side">
-                <div id="opponent-deck" class="deck">
-                    <div class="deck-card"></div>
-                    <div class="deck-count" id="opponent-count">52</div>
-                </div>
-                <div id="opponent-played" class="played-card-slot"></div>
-            </div>
-
-            <div id="battle-zone">
-                <div id="vs-indicator">VS</div>
-            </div>
-
-            <div id="player-side">
-                <div id="player-played" class="played-card-slot"></div>
-                <div id="player-deck" class="deck" title="Click to view deck">
-                    <div class="deck-card"></div>
-                    <div class="deck-count" id="player-count">52</div>
-                    <div class="deck-label">View Deck</div>
-                </div>
-            </div>
+        <!-- Coin display -->
+        <div id="coin-display">
+            <span id="coin-icon">&#x1FA99;</span>
+            <span id="coin-count">0</span>
         </div>
 
-        <!-- Win/lose notifications -->
-        <div id="notifications"></div>
+        <!-- Stats display -->
+        <div id="stats-display">
+            <span id="wins-count">0 wins</span>
+        </div>
 
-        <!-- Booster packs waiting to be opened -->
-        <div id="booster-area">
-            <div id="booster-packs"></div>
+        <!-- Main layout: opponents | game | store -->
+        <div id="main-layout">
+            <!-- Left: Opponent selection -->
+            <div id="opponent-panel">
+                <h3>Opponents</h3>
+                <div id="opponent-list"></div>
+            </div>
+
+            <!-- Center: Game area -->
+            <div id="game-area">
+                <!-- Speed controls -->
+                <div id="speed-controls">
+                    <span id="speed-label">1x</span>
+                </div>
+
+                <!-- Play field -->
+                <div id="play-field">
+                    <div id="opponent-info">
+                        <div id="opponent-name">Rookie</div>
+                    </div>
+                    <div id="opponent-side">
+                        <div id="opponent-deck" class="deck">
+                            <div class="deck-card"></div>
+                            <div class="deck-count" id="opponent-count">52</div>
+                        </div>
+                        <div id="opponent-played" class="played-card-slot"></div>
+                    </div>
+
+                    <div id="battle-zone">
+                        <div id="vs-indicator">VS</div>
+                        <div id="blackjack-bonus" class="hidden">21!</div>
+                    </div>
+
+                    <div id="player-side">
+                        <div id="player-played" class="played-card-slot"></div>
+                        <div id="player-deck" class="deck" title="Click to view deck">
+                            <div class="deck-card" id="player-deck-card"></div>
+                            <div class="deck-count" id="player-count">52</div>
+                            <div class="deck-label">View Deck</div>
+                        </div>
+                    </div>
+
+                    <!-- Betting UI -->
+                    <div id="betting-area" class="hidden">
+                        <span>Bet:</span>
+                        <button id="bet-decrease">-</button>
+                        <span id="current-bet">0</span>
+                        <button id="bet-increase">+</button>
+                    </div>
+                </div>
+
+                <!-- Win/lose notifications -->
+                <div id="notifications"></div>
+
+                <!-- Booster packs -->
+                <div id="booster-area">
+                    <div id="booster-packs"></div>
+                </div>
+            </div>
+
+            <!-- Right: Store -->
+            <div id="store-panel">
+                <h3>Store</h3>
+                <div id="store-items"></div>
+            </div>
         </div>
     </div>
 
