@@ -7,14 +7,8 @@ const SUIT_SYMBOLS = {
     spades: '\u2660'
 };
 const VALUES = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'];
-const VALUE_NAMES = {
-    'J': 'Jack',
-    'Q': 'Queen',
-    'K': 'King',
-    'A': 'Ace'
-};
 
-// Face card art (emoji placeholders - can be replaced with actual images)
+// Face card art (emoji placeholders)
 const FACE_CARD_ART = {
     'J': ['🤴', '🧙', '🎭', '🗡️'],
     'Q': ['👸', '🧝', '🌹', '💎'],
@@ -22,19 +16,19 @@ const FACE_CARD_ART = {
 };
 
 // Game State
-let playerDeck = [];
-let opponentDeck = [];
-let playerHand = [];
+let playerCollection = []; // Player's permanent 52-card collection
+let playerHand = [];       // Cards in hand during current game
 let opponentHand = [];
-let playerDiscard = [];
+let playerDiscard = [];    // Won cards pile during current game
 let opponentDiscard = [];
 let boosterPacks = [];
 let currentPackCards = [];
 let currentPackIndex = 0;
 let selectedDeckCard = null;
 let selectedNewCard = null;
-let gameSpeed = 800; // ms per card play (faster for ~1 min games)
+let gameSpeed = 800;
 let isPlaying = true;
+let gameEnding = false;    // Prevents multiple endGame calls
 
 // Rarity weights (lower = rarer)
 const RARITY_WEIGHTS = {
@@ -45,20 +39,11 @@ const RARITY_WEIGHTS = {
 
 // Initialize game
 function init() {
-    playerDeck = createStandardDeck();
-    opponentDeck = createStandardDeck();
-
-    shuffleDeck(playerDeck);
-    shuffleDeck(opponentDeck);
-
-    // Move deck to hands
-    playerHand = [...playerDeck];
-    opponentHand = [...opponentDeck];
-    playerDeck = [];
-    opponentDeck = [];
+    // Create player's permanent collection
+    playerCollection = createStandardDeck();
 
     setupEventListeners();
-    updateDeckCounts();
+    startNewGame();
     startGameLoop();
 }
 
@@ -87,13 +72,35 @@ function shuffleDeck(deck) {
     }
 }
 
+// Start a new game with current collections
+function startNewGame() {
+    gameEnding = false;
+
+    // Copy player's collection for this game
+    playerHand = playerCollection.map(card => ({...card}));
+    shuffleDeck(playerHand);
+
+    // Create fresh opponent deck
+    opponentHand = createStandardDeck();
+    shuffleDeck(opponentHand);
+
+    playerDiscard = [];
+    opponentDiscard = [];
+
+    // Clear played cards
+    document.getElementById('player-played').innerHTML = '';
+    document.getElementById('opponent-played').innerHTML = '';
+
+    updateDeckCounts();
+}
+
 // Get card value for comparison
 function getCardPower(card) {
     return VALUES.indexOf(card.value);
 }
 
 // Create card DOM element
-function createCardElement(card, size = 'normal') {
+function createCardElement(card) {
     const div = document.createElement('div');
     div.className = 'card';
 
@@ -106,7 +113,6 @@ function createCardElement(card, size = 'normal') {
     const symbol = SUIT_SYMBOLS[card.suit];
     const displayValue = card.value;
 
-    // Center content
     let centerContent = symbol;
     if (card.specialArt && ['J', 'Q', 'K'].includes(card.value)) {
         const artIndex = SUITS.indexOf(card.suit);
@@ -120,13 +126,12 @@ function createCardElement(card, size = 'normal') {
     `;
 
     div.dataset.cardId = card.id;
-
     return div;
 }
 
 // Play a round
 function playRound() {
-    if (!isPlaying) return;
+    if (!isPlaying || gameEnding) return;
 
     // Check if hands are empty, reshuffle discard
     if (playerHand.length === 0) {
@@ -149,17 +154,16 @@ function playRound() {
         shuffleDeck(opponentHand);
     }
 
-    // Draw cards
     const playerCard = playerHand.shift();
     const opponentCard = opponentHand.shift();
 
-    // Display cards
     displayPlayedCard(playerCard, 'player');
     displayPlayedCard(opponentCard, 'opponent');
 
-    // Compare after animation
     setTimeout(() => {
-        compareCards(playerCard, opponentCard, [playerCard], [opponentCard]);
+        if (!gameEnding) {
+            compareCards(playerCard, opponentCard, [playerCard], [opponentCard]);
+        }
     }, 300);
 }
 
@@ -186,6 +190,8 @@ function updateDeckCounts() {
 
 // Compare cards and determine winner
 function compareCards(playerCard, opponentCard, playerPile, opponentPile) {
+    if (gameEnding) return;
+
     const playerPower = getCardPower(playerCard);
     const opponentPower = getCardPower(opponentCard);
 
@@ -193,32 +199,29 @@ function compareCards(playerCard, opponentCard, playerPile, opponentPile) {
     const opponentSlot = document.getElementById('opponent-played');
 
     if (playerPower > opponentPower) {
-        // Player wins
-        playerSlot.querySelector('.card').classList.add('winning');
-        opponentSlot.querySelector('.card').classList.add('losing');
+        playerSlot.querySelector('.card')?.classList.add('winning');
+        opponentSlot.querySelector('.card')?.classList.add('losing');
         playerDiscard.push(...playerPile, ...opponentPile);
     } else if (opponentPower > playerPower) {
-        // Opponent wins
-        opponentSlot.querySelector('.card').classList.add('winning');
-        playerSlot.querySelector('.card').classList.add('losing');
+        opponentSlot.querySelector('.card')?.classList.add('winning');
+        playerSlot.querySelector('.card')?.classList.add('losing');
         opponentDiscard.push(...playerPile, ...opponentPile);
     } else {
-        // War!
         handleWar(playerPile, opponentPile);
         return;
     }
 
-    // Check for game end
     checkGameEnd();
 }
 
 // Handle war (tie)
 function handleWar(playerPile, opponentPile) {
+    if (gameEnding) return;
+
     const battleZone = document.getElementById('battle-zone');
     battleZone.classList.add('battle-flash');
     setTimeout(() => battleZone.classList.remove('battle-flash'), 600);
 
-    // Need 4 cards for war (3 face down + 1 face up)
     const playerWarCards = [];
     const opponentWarCards = [];
 
@@ -242,7 +245,6 @@ function handleWar(playerPile, opponentPile) {
         }
     }
 
-    // If either side ran out of cards
     if (playerWarCards.length === 0) {
         opponentDiscard.push(...playerPile, ...opponentPile);
         checkGameEnd();
@@ -254,8 +256,9 @@ function handleWar(playerPile, opponentPile) {
         return;
     }
 
-    // Show the face-up cards
     setTimeout(() => {
+        if (gameEnding) return;
+
         const newPlayerCard = playerWarCards[playerWarCards.length - 1];
         const newOpponentCard = opponentWarCards[opponentWarCards.length - 1];
 
@@ -263,18 +266,22 @@ function handleWar(playerPile, opponentPile) {
         displayPlayedCard(newOpponentCard, 'opponent');
 
         setTimeout(() => {
-            compareCards(
-                newPlayerCard,
-                newOpponentCard,
-                [...playerPile, ...playerWarCards],
-                [...opponentPile, ...opponentWarCards]
-            );
+            if (!gameEnding) {
+                compareCards(
+                    newPlayerCard,
+                    newOpponentCard,
+                    [...playerPile, ...playerWarCards],
+                    [...opponentPile, ...opponentWarCards]
+                );
+            }
         }, 300);
     }, 400);
 }
 
 // Check if game has ended
 function checkGameEnd() {
+    if (gameEnding) return;
+
     const playerTotal = playerHand.length + playerDiscard.length;
     const opponentTotal = opponentHand.length + opponentDiscard.length;
 
@@ -287,59 +294,18 @@ function checkGameEnd() {
 
 // End the current game
 function endGame(playerWon) {
+    if (gameEnding) return; // Prevent multiple calls
+    gameEnding = true;
+
     showNotification(playerWon);
 
     if (playerWon) {
-        // Award booster pack
         awardBoosterPack();
     }
 
-    // Reset for new game
     setTimeout(() => {
-        resetGame();
+        startNewGame();
     }, 1500);
-}
-
-// Reset game state for new game
-function resetGame() {
-    // Keep player's deck (their collection)
-    const playerCollection = getPlayerCollection();
-
-    playerDeck = [...playerCollection];
-    opponentDeck = createStandardDeck();
-
-    shuffleDeck(playerDeck);
-    shuffleDeck(opponentDeck);
-
-    playerHand = [...playerDeck];
-    opponentHand = [...opponentDeck];
-    playerDeck = [];
-    opponentDeck = [];
-    playerDiscard = [];
-    opponentDiscard = [];
-
-    // Clear played cards
-    document.getElementById('player-played').innerHTML = '';
-    document.getElementById('opponent-played').innerHTML = '';
-
-    updateDeckCounts();
-}
-
-// Get player's current collection (deck + discard + hand)
-function getPlayerCollection() {
-    // Combine all player cards, taking first 52 unique by base card
-    const allCards = [...playerHand, ...playerDiscard];
-
-    // If we have cards, return them; otherwise return a standard deck
-    if (allCards.length >= 52) {
-        return allCards.slice(0, 52);
-    } else if (allCards.length > 0) {
-        // Pad with standard cards if needed
-        const standard = createStandardDeck();
-        return [...allCards, ...standard].slice(0, 52);
-    }
-
-    return createStandardDeck();
 }
 
 // Show win/lose notification
@@ -370,7 +336,6 @@ function generateBoosterPack() {
     for (let i = 0; i < 15; i++) {
         const card = generateRandomCard();
 
-        // Guarantee at least one foil in pack
         if (i === 14 && !hasFoil) {
             card.foil = true;
         }
@@ -384,7 +349,6 @@ function generateBoosterPack() {
 
 // Generate a random card with rarity considerations
 function generateRandomCard() {
-    // Weighted random value selection
     const totalWeight = Object.values(RARITY_WEIGHTS).reduce((a, b) => a + b, 0);
     let random = Math.random() * totalWeight;
     let selectedValue = '2';
@@ -398,11 +362,7 @@ function generateRandomCard() {
     }
 
     const suit = SUITS[Math.floor(Math.random() * SUITS.length)];
-
-    // Determine if foil (~10%)
     const isFoil = Math.random() < 0.10;
-
-    // Determine if special art (face cards only, ~20% chance)
     const isSpecialArt = ['J', 'Q', 'K'].includes(selectedValue) && Math.random() < 0.20;
 
     return {
@@ -432,21 +392,17 @@ function openBoosterPack(index) {
     const pack = boosterPacks[index];
     if (!pack) return;
 
-    // Play sound (optional)
     playPackOpenSound();
 
-    // Animate pack opening
     const packEls = document.querySelectorAll('.booster-pack');
     if (packEls[index]) {
         packEls[index].classList.add('pack-opening');
     }
 
     setTimeout(() => {
-        // Remove pack from array
         boosterPacks.splice(index, 1);
         renderBoosterPacks();
 
-        // Show cards
         currentPackCards = pack;
         currentPackIndex = 0;
         showPackOpener();
@@ -455,27 +411,30 @@ function openBoosterPack(index) {
 
 // Play pack open sound
 function playPackOpenSound() {
-    // Create simple audio feedback
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const oscillator = audioContext.createOscillator();
-    const gainNode = audioContext.createGain();
+    try {
+        const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioContext.createOscillator();
+        const gainNode = audioContext.createGain();
 
-    oscillator.connect(gainNode);
-    gainNode.connect(audioContext.destination);
+        oscillator.connect(gainNode);
+        gainNode.connect(audioContext.destination);
 
-    oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(800, audioContext.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1200, audioContext.currentTime + 0.1);
 
-    gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
 
-    oscillator.start(audioContext.currentTime);
-    oscillator.stop(audioContext.currentTime + 0.2);
+        oscillator.start(audioContext.currentTime);
+        oscillator.stop(audioContext.currentTime + 0.2);
+    } catch (e) {
+        // Audio not supported
+    }
 }
 
 // Show pack opener overlay
 function showPackOpener() {
-    isPlaying = false; // Pause game while viewing pack
+    isPlaying = false;
     const overlay = document.getElementById('pack-opener');
     overlay.classList.remove('hidden');
 
@@ -504,7 +463,6 @@ function updateCardStack() {
     const remainingCards = currentPackCards.length - currentPackIndex - 1;
     const visibleStack = Math.min(remainingCards, 5);
 
-    // Show actual cards behind (in reverse order so first remaining is on top of stack)
     for (let i = visibleStack - 1; i >= 0; i--) {
         const cardIndex = currentPackIndex + 1 + i;
         if (cardIndex < currentPackCards.length) {
@@ -561,17 +519,14 @@ function renderSwapScreenDecks() {
     deckGrid.innerHTML = '';
     newGrid.innerHTML = '';
 
-    // Get current player deck
-    const playerCollection = getPlayerCollection();
-
-    // Sort by suit and value
-    playerCollection.sort((a, b) => {
+    // Sort player's permanent collection by suit and value
+    const sortedCollection = [...playerCollection].sort((a, b) => {
         const suitDiff = SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit);
         if (suitDiff !== 0) return suitDiff;
         return VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
     });
 
-    playerCollection.forEach(card => {
+    sortedCollection.forEach(card => {
         const cardEl = createCardElement(card);
         cardEl.addEventListener('click', () => selectDeckCard(card, cardEl));
         deckGrid.appendChild(cardEl);
@@ -586,7 +541,6 @@ function renderSwapScreenDecks() {
 
 // Select a card from player's deck
 function selectDeckCard(card, element) {
-    // Deselect previous
     document.querySelectorAll('#your-deck-grid .card.selected').forEach(el => {
         el.classList.remove('selected');
     });
@@ -594,7 +548,6 @@ function selectDeckCard(card, element) {
     element.classList.add('selected');
     selectedDeckCard = card;
 
-    // Update swap preview
     const swapOut = document.getElementById('swap-out');
     swapOut.innerHTML = '';
     swapOut.appendChild(createCardElement(card));
@@ -604,7 +557,6 @@ function selectDeckCard(card, element) {
 
 // Select a card from new cards
 function selectNewCard(card, element) {
-    // Deselect previous
     document.querySelectorAll('#new-cards-grid .card.selected').forEach(el => {
         el.classList.remove('selected');
     });
@@ -612,7 +564,6 @@ function selectNewCard(card, element) {
     element.classList.add('selected');
     selectedNewCard = card;
 
-    // Update swap preview
     const swapIn = document.getElementById('swap-in');
     swapIn.innerHTML = '';
     swapIn.appendChild(createCardElement(card));
@@ -630,18 +581,11 @@ function updateSwapButton() {
 function performSwap() {
     if (!selectedDeckCard || !selectedNewCard) return;
 
-    // Get current collection
-    const collection = getPlayerCollection();
-
-    // Find and replace the card
-    const index = collection.findIndex(c => c.id === selectedDeckCard.id);
+    // Find and replace in player's permanent collection
+    const index = playerCollection.findIndex(c => c.id === selectedDeckCard.id);
     if (index !== -1) {
-        collection[index] = selectedNewCard;
+        playerCollection[index] = selectedNewCard;
     }
-
-    // Update player's cards
-    playerHand = collection;
-    playerDiscard = [];
 
     // Remove from new cards
     const newIndex = currentPackCards.findIndex(c => c.id === selectedNewCard.id);
@@ -653,11 +597,9 @@ function performSwap() {
     selectedDeckCard = null;
     selectedNewCard = null;
 
-    // Update swap preview
     document.getElementById('swap-out').innerHTML = '<span>Select from deck</span>';
     document.getElementById('swap-in').innerHTML = '<span>Select new card</span>';
 
-    // Re-render
     renderSwapScreenDecks();
     updateSwapButton();
 }
@@ -666,32 +608,30 @@ function performSwap() {
 function discardRemainingCards() {
     currentPackCards = [];
     document.getElementById('swap-screen').classList.add('hidden');
-    isPlaying = true; // Resume game
+    isPlaying = true;
 }
 
 // Show deck viewer
 function showDeckViewer() {
-    isPlaying = false; // Pause game while viewing deck
+    isPlaying = false;
     const overlay = document.getElementById('deck-viewer');
     overlay.classList.remove('hidden');
 
     const grid = document.getElementById('deck-grid');
     grid.innerHTML = '';
 
-    // Get and sort collection
-    const collection = getPlayerCollection();
-    collection.sort((a, b) => {
+    // Sort player's permanent collection
+    const sortedCollection = [...playerCollection].sort((a, b) => {
         const suitDiff = SUITS.indexOf(a.suit) - SUITS.indexOf(b.suit);
         if (suitDiff !== 0) return suitDiff;
         return VALUES.indexOf(a.value) - VALUES.indexOf(b.value);
     });
 
-    collection.forEach(card => {
+    sortedCollection.forEach(card => {
         const cardEl = createCardElement(card);
         cardEl.addEventListener('mouseenter', (e) => showMagnifiedCard(card, e));
         cardEl.addEventListener('mouseleave', hideMagnifiedCard);
         cardEl.addEventListener('click', (e) => {
-            // For mobile
             showMagnifiedCard(card, e);
             setTimeout(hideMagnifiedCard, 2000);
         });
@@ -708,7 +648,6 @@ function showMagnifiedCard(card, event) {
     const cardEl = createCardElement(card);
     magnified.appendChild(cardEl);
 
-    // Position near mouse but not off screen
     const rect = event.target.getBoundingClientRect();
     let x = rect.left + rect.width / 2;
     let y = rect.top - 120;
@@ -730,12 +669,12 @@ function hideMagnifiedCard() {
 // Close deck viewer
 function closeDeckViewer() {
     document.getElementById('deck-viewer').classList.add('hidden');
-    isPlaying = true; // Resume game
+    isPlaying = true;
 }
 
 // Setup event listeners
 function setupEventListeners() {
-    // Deck viewer
+    // Deck viewer - click on deck or label
     document.getElementById('player-deck').addEventListener('click', showDeckViewer);
     document.getElementById('close-deck-viewer').addEventListener('click', closeDeckViewer);
     document.getElementById('deck-viewer').addEventListener('click', (e) => {
@@ -747,7 +686,7 @@ function setupEventListeners() {
     document.getElementById('next-card').addEventListener('click', () => navigatePackCards(1));
     document.getElementById('add-to-deck-btn').addEventListener('click', showSwapScreen);
 
-    // Keyboard navigation for pack opener
+    // Keyboard navigation
     document.addEventListener('keydown', (e) => {
         const packOpener = document.getElementById('pack-opener');
         if (!packOpener.classList.contains('hidden')) {
@@ -770,7 +709,7 @@ function setupEventListeners() {
 // Start game loop
 function startGameLoop() {
     setInterval(() => {
-        if (isPlaying) {
+        if (isPlaying && !gameEnding) {
             playRound();
         }
     }, gameSpeed);
