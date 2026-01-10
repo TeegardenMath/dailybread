@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>War</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="game-container">
+        <!-- Play field where cards are played -->
+        <div id="play-field">
+            <div id="opponent-side">
+                <div id="opponent-deck" class="deck">
+                    <div class="deck-card"></div>
+                    <div class="deck-count" id="opponent-count">52</div>
+                </div>
+                <div id="opponent-played" class="played-card-slot"></div>
+            </div>
+
+            <div id="battle-zone">
+                <div id="vs-indicator">VS</div>
+            </div>
+
+            <div id="player-side">
+                <div id="player-played" class="played-card-slot"></div>
+                <div id="player-deck" class="deck" title="Click to view deck">
+                    <div class="deck-card"></div>
+                    <div class="deck-count" id="player-count">52</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Win/lose notifications -->
+        <div id="notifications"></div>
+
+        <!-- Booster packs waiting to be opened -->
+        <div id="booster-area">
+            <div id="booster-packs"></div>
+        </div>
+    </div>
+
+    <!-- Deck viewer overlay -->
+    <div id="deck-viewer" class="overlay hidden">
+        <div id="deck-viewer-content">
+            <div id="deck-grid"></div>
+            <button id="close-deck-viewer" class="close-btn">&times;</button>
+        </div>
+        <div id="magnified-card" class="hidden"></div>
+    </div>
+
+    <!-- Booster pack opening overlay -->
+    <div id="pack-opener" class="overlay hidden">
+        <div id="pack-opener-content">
+            <div id="card-display">
+                <button id="prev-card" class="nav-arrow">&larr;</button>
+                <div id="current-card-container">
+                    <div id="current-card"></div>
+                    <div id="card-stack"></div>
+                </div>
+                <button id="next-card" class="nav-arrow">&rarr;</button>
+            </div>
+            <div id="card-counter"></div>
+            <button id="add-to-deck-btn">Add Cards to Deck</button>
+        </div>
+    </div>
+
+    <!-- Swap screen overlay -->
+    <div id="swap-screen" class="overlay hidden">
+        <div id="swap-content">
+            <div id="swap-columns">
+                <div id="your-deck-column">
+                    <h3>Your Deck</h3>
+                    <div id="your-deck-grid"></div>
+                </div>
+                <div id="swap-controls">
+                    <button id="swap-btn" disabled>Swap</button>
+                    <div id="swap-preview">
+                        <div id="swap-out" class="swap-slot">
+                            <span>Select from deck</span>
+                        </div>
+                        <span class="swap-arrow">&harr;</span>
+                        <div id="swap-in" class="swap-slot">
+                            <span>Select new card</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="new-cards-column">
+                    <h3>New Cards</h3>
+                    <div id="new-cards-grid"></div>
+                </div>
+            </div>
+            <button id="discard-btn">Discard Remaining Cards</button>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
