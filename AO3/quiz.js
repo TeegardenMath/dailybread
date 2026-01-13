@@ -415,8 +415,8 @@ async function fetchWithProxy(url, proxyIndex = 0) {
 
     const text = await response.text();
 
-    // Check for error responses
-    if (text.includes('Retry later') || text.includes('Error') || text.length < 500) {
+    // Check for proxy-specific error responses (not AO3 content)
+    if (text.length < 500 && (text.includes('Retry later') || text.includes('"error"'))) {
       console.log(`${proxy.name} returned error response, trying next proxy...`);
       return fetchWithProxy(url, proxyIndex + 1);
     }
@@ -424,6 +424,7 @@ async function fetchWithProxy(url, proxyIndex = 0) {
     // Check it's actually HTML from AO3
     if (!text.includes('archiveofourown') && !text.includes('Archive of Our Own')) {
       console.log(`${proxy.name} didn't return AO3 content, trying next proxy...`);
+      console.log('Response preview:', text.substring(0, 200));
       return fetchWithProxy(url, proxyIndex + 1);
     }
 
