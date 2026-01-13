@@ -12,8 +12,14 @@ let state = {
 
 const PHASE_1_QUESTIONS = 10;
 const MAX_QUESTIONS = 25;
-const CORS_PROXY = 'https://corsproxy.io/?';
-const FETCH_TIMEOUT = 45000; // 45 seconds - AO3 can be slow
+// Multiple CORS proxies to try in sequence
+const CORS_PROXIES = [
+  { url: 'https://test.cors.workers.dev/?', name: 'workers.dev' },
+  { url: 'https://corsproxy.io/?', name: 'corsproxy.io' },
+  { url: 'https://api.allorigins.win/raw?url=', name: 'allorigins' }
+];
+let currentProxyIndex = 0;
+const FETCH_TIMEOUT = 30000; // 30 seconds
 
 // Initialize
 function startQuiz() {
@@ -68,19 +74,26 @@ function selectPhase1Question() {
 }
 
 // Phase 2: Use real tags from fetched fics
+// We fetch ONCE at start of Phase 2, then filter client-side
 async function selectPhase2Question() {
   showLoading(true);
 
   try {
-    // Fetch works page for the most recent tag
-    const searchUrl = buildSearchUrl(state.selectedTags);
-    const html = await fetchWithProxy(searchUrl);
+    let filteredFics;
 
-    // Parse the results
-    const parsed = parseSearchResults(html);
+    // Only fetch from AO3 if we don't have cached fics yet
+    if (state.currentFics.length === 0) {
+      // Fetch works page for the most recent tag
+      const searchUrl = buildSearchUrl(state.selectedTags);
+      const html = await fetchWithProxy(searchUrl);
+
+      // Parse the results
+      const parsed = parseSearchResults(html);
+      state.currentFics = parsed.fics;
+    }
 
     // Client-side filter: keep only fics that have ALL selected tags
-    const filteredFics = parsed.fics.filter(fic => {
+    filteredFics = state.currentFics.filter(fic => {
       const ficTagsLower = fic.tags.map(t => t.toLowerCase());
       return state.selectedTags.every(selectedTag =>
         ficTagsLower.some(ficTag =>
@@ -90,14 +103,13 @@ async function selectPhase2Question() {
       );
     });
 
-    state.currentFics = filteredFics;
     state.estimatedPool = filteredFics.length;
 
     // If we're down to a small number, we're done
     if (filteredFics.length === 0) {
-      // No matches with all tags - use the best match from unfiltered
+      // No matches with all tags - use the best match from cached
       showLoading(false);
-      return { done: true, fic: parsed.fics[0] };
+      return { done: true, fic: state.currentFics[0] };
     }
 
     if (filteredFics.length === 1) {
@@ -409,8 +421,15 @@ function buildSearchUrl(tags) {
   return `https://archiveofourown.org/tags/${encodeURIComponent(encodedTag)}/works`;
 }
 
-async function fetchWithProxy(url, retryCount = 0) {
-  const proxyUrl = CORS_PROXY + encodeURIComponent(url);
+async function fetchWithProxy(url, proxyIndex = 0) {
+  if (proxyIndex >= CORS_PROXIES.length) {
+    throw new Error('All proxies failed');
+  }
+
+  const proxy = CORS_PROXIES[proxyIndex];
+  const proxyUrl = proxy.url + encodeURIComponent(url);
+
+  console.log(`Trying ${proxy.name}...`);
 
   try {
     const controller = new AbortController();
@@ -420,28 +439,31 @@ async function fetchWithProxy(url, retryCount = 0) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      console.log(`${proxy.name} returned HTTP ${response.status}, trying next proxy...`);
+      return fetchWithProxy(url, proxyIndex + 1);
     }
 
     const text = await response.text();
 
-    // Check for AO3 rate limit message
-    if (text.includes('Retry later') || text.length < 500) {
-      if (retryCount < 2) {
-        // Wait a bit and retry
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        return fetchWithProxy(url, retryCount + 1);
-      }
-      throw new Error('AO3 is rate limiting requests');
+    // Check for error responses
+    if (text.includes('Retry later') || text.includes('Error') || text.length < 500) {
+      console.log(`${proxy.name} returned error response, trying next proxy...`);
+      return fetchWithProxy(url, proxyIndex + 1);
     }
 
-    return text;
-  } catch (error) {
-    if (retryCount < 2 && error.name === 'AbortError') {
-      // Timeout - retry once
-      return fetchWithProxy(url, retryCount + 1);
+    // Check it's actually HTML from AO3
+    if (!text.includes('archiveofourown') && !text.includes('Archive of Our Own')) {
+      console.log(`${proxy.name} didn't return AO3 content, trying next proxy...`);
+      return fetchWithProxy(url, proxyIndex + 1);
     }
-    throw error;
+
+    console.log(`${proxy.name} succeeded!`);
+    currentProxyIndex = proxyIndex; // Remember which proxy worked
+    return text;
+
+  } catch (error) {
+    console.log(`${proxy.name} failed: ${error.message}, trying next proxy...`);
+    return fetchWithProxy(url, proxyIndex + 1);
   }
 }
 
