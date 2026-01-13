@@ -12,9 +12,8 @@ let state = {
 
 const PHASE_1_QUESTIONS = 10;
 const MAX_QUESTIONS = 25;
-// Multiple CORS proxies to try in sequence
+// CORS proxy (corsproxy.io works from browsers)
 const CORS_PROXIES = [
-  { url: 'https://test.cors.workers.dev/?', name: 'workers.dev' },
   { url: 'https://corsproxy.io/?', name: 'corsproxy.io' },
   { url: 'https://api.allorigins.win/raw?url=', name: 'allorigins' }
 ];
