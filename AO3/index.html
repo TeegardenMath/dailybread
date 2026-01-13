@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Which AO3 Fic Are You?</title>
+  <meta property="og:title" content="Which AO3 Fic Are You?">
+  <meta property="og:description" content="Answer questions about your fic preferences and discover which fanfic matches your soul.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Which AO3 Fic Are You?">
+  <meta name="twitter:description" content="Answer questions about your fic preferences and discover which fanfic matches your soul.">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Lucida Grande', 'Lucida Sans Unicode', 'GNU Unifont', Verdana, Helvetica, sans-serif;
+      background: #f6f6f6;
+      color: #2a2a2a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    h1 {
+      color: #900;
+      font-size: 1.8em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #666;
+      font-size: 0.95em;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 4px;
+      background: #ddd;
+      border-radius: 2px;
+      margin-bottom: 30px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: #900;
+      transition: width 0.3s ease;
+      width: 0%;
+    }
+
+    .quiz-area {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 30px;
+      margin-bottom: 20px;
+    }
+
+    .question-number {
+      color: #900;
+      font-size: 0.85em;
+      margin-bottom: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .question-text {
+      font-size: 1.2em;
+      margin-bottom: 25px;
+      line-height: 1.4;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .option-btn {
+      background: #f9f9f9;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 16px 20px;
+      font-size: 1em;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.15s ease;
+      font-family: inherit;
+      color: #2a2a2a;
+    }
+
+    .option-btn:hover {
+      background: #fff0f0;
+      border-color: #900;
+    }
+
+    .option-btn:active {
+      background: #900;
+      color: white;
+    }
+
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+    }
+
+    .loading-subtext {
+      font-size: 0.85em;
+      margin-top: 10px;
+      opacity: 0.7;
+    }
+
+    #loading-text::after {
+      content: '';
+      animation: dots 1.5s infinite;
+    }
+
+    @keyframes dots {
+      0%, 20% { content: ''; }
+      40% { content: '.'; }
+      60% { content: '..'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* Results */
+    .result {
+      display: none;
+    }
+
+    .result.visible {
+      display: block;
+    }
+
+    .result-header {
+      color: #900;
+      font-size: 1.1em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .fic-card {
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .fic-header {
+      background: #900;
+      color: white;
+      padding: 15px 20px;
+    }
+
+    .fic-title {
+      font-size: 1.3em;
+      margin-bottom: 5px;
+    }
+
+    .fic-title a {
+      color: white;
+      text-decoration: none;
+    }
+
+    .fic-title a:hover {
+      text-decoration: underline;
+    }
+
+    .fic-author {
+      font-size: 0.9em;
+      opacity: 0.9;
+    }
+
+    .fic-body {
+      padding: 20px;
+    }
+
+    .fic-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .fic-meta-item {
+      background: #f0f0f0;
+      padding: 4px 10px;
+      border-radius: 3px;
+      font-size: 0.85em;
+    }
+
+    .fic-fandom {
+      color: #900;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+
+    .fic-tags {
+      margin-bottom: 15px;
+    }
+
+    .fic-tags-label {
+      font-size: 0.8em;
+      color: #666;
+      margin-bottom: 6px;
+    }
+
+    .tag-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+
+    .tag {
+      background: #fff0f0;
+      border: 1px solid #ffcccc;
+      color: #900;
+      padding: 3px 8px;
+      border-radius: 3px;
+      font-size: 0.8em;
+    }
+
+    .tag.selected {
+      background: #900;
+      color: white;
+      border-color: #900;
+    }
+
+    .fic-summary {
+      font-size: 0.95em;
+      line-height: 1.5;
+      color: #444;
+      border-left: 3px solid #900;
+      padding-left: 15px;
+      margin-top: 15px;
+    }
+
+    .fic-stats {
+      display: flex;
+      gap: 15px;
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid #eee;
+      font-size: 0.85em;
+      color: #666;
+    }
+
+    /* Share section */
+    .share-section {
+      margin-top: 25px;
+      padding-top: 20px;
+      border-top: 1px solid #eee;
+    }
+
+    .share-label {
+      font-size: 0.9em;
+      color: #666;
+      margin-bottom: 12px;
+    }
+
+    .share-buttons {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .share-btn {
+      background: #f0f0f0;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px 16px;
+      font-size: 0.9em;
+      cursor: pointer;
+      text-decoration: none;
+      color: #2a2a2a;
+      font-family: inherit;
+      transition: all 0.15s ease;
+    }
+
+    .share-btn:hover {
+      background: #e0e0e0;
+    }
+
+    .restart-btn {
+      background: #900;
+      color: white;
+      border-color: #900;
+    }
+
+    .restart-btn:hover {
+      background: #700;
+    }
+
+    /* Phase indicator */
+    .phase-indicator {
+      font-size: 0.75em;
+      color: #999;
+      text-align: center;
+      margin-top: 15px;
+    }
+
+    /* Error state */
+    .error {
+      background: #fff5f5;
+      border: 1px solid #ffcccc;
+      color: #900;
+      padding: 20px;
+      border-radius: 4px;
+      text-align: center;
+    }
+
+    .error-retry {
+      margin-top: 15px;
+    }
+
+    /* Start screen */
+    .start-screen {
+      text-align: center;
+    }
+
+    .start-description {
+      margin-bottom: 25px;
+      line-height: 1.6;
+      color: #444;
+    }
+
+    .start-btn {
+      background: #900;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 14px 30px;
+      font-size: 1.1em;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s ease;
+    }
+
+    .start-btn:hover {
+      background: #700;
+    }
+
+    /* Transition message */
+    .transition-message {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Which AO3 Fic Are You?</h1>
+      <p class="subtitle">Answer questions to find your fanfic soulmate</p>
+    </header>
+
+    <div class="progress-bar">
+      <div class="progress-fill" id="progress"></div>
+    </div>
+
+    <div class="quiz-area" id="quiz-area">
+      <!-- Start screen -->
+      <div class="start-screen" id="start-screen">
+        <p class="start-description">
+          Pick between tags to narrow down the Archive until we find the one fic
+          that matches your soul. You'll start with broad vibes and end up
+          discovering delightfully specific tags you never knew existed.
+        </p>
+        <button class="start-btn" onclick="startQuiz()">Begin</button>
+      </div>
+
+      <!-- Question display -->
+      <div id="question-container" style="display: none;">
+        <div class="question-number" id="question-number">Question 1</div>
+        <div class="question-text" id="question-text">Which speaks to you more?</div>
+        <div class="options" id="options"></div>
+        <div class="phase-indicator" id="phase-indicator"></div>
+      </div>
+
+      <!-- Loading state -->
+      <div class="loading" id="loading" style="display: none;">
+        <div id="loading-text">Searching the Archive</div>
+        <div class="loading-subtext">AO3 can be slow, hang tight...</div>
+      </div>
+
+      <!-- Transition message -->
+      <div class="transition-message" id="transition" style="display: none;">
+        <div>Now let's see what quirky tags are hiding in your results...</div>
+      </div>
+
+      <!-- Error state -->
+      <div class="error" id="error" style="display: none;">
+        <div id="error-message">Something went wrong</div>
+        <div class="error-retry">
+          <button class="share-btn" onclick="retryLastAction()">Try Again</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Results -->
+    <div class="result" id="result">
+      <div class="result-header">You are...</div>
+      <div class="fic-card">
+        <div class="fic-header">
+          <div class="fic-title"><a id="fic-title-link" href="#" target="_blank"></a></div>
+          <div class="fic-author">by <span id="fic-author"></span></div>
+        </div>
+        <div class="fic-body">
+          <div class="fic-fandom" id="fic-fandom"></div>
+          <div class="fic-meta" id="fic-meta"></div>
+          <div class="fic-tags">
+            <div class="fic-tags-label">Your matching tags:</div>
+            <div class="tag-list" id="selected-tags"></div>
+          </div>
+          <div class="fic-tags">
+            <div class="fic-tags-label">Other tags:</div>
+            <div class="tag-list" id="other-tags"></div>
+          </div>
+          <div class="fic-summary" id="fic-summary"></div>
+          <div class="fic-stats" id="fic-stats"></div>
+        </div>
+      </div>
+
+      <div class="share-section">
+        <div class="share-label">Share your result:</div>
+        <div class="share-buttons">
+          <a class="share-btn" id="share-twitter" href="#" target="_blank">Twitter</a>
+          <a class="share-btn" id="share-tumblr" href="#" target="_blank">Tumblr</a>
+          <a class="share-btn" id="share-copy" href="#" onclick="copyResult(event)">Copy Link</a>
+          <button class="share-btn restart-btn" onclick="restartQuiz()">Take Again</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="tags.js"></script>
+  <script src="quiz.js"></script>
+</body>
+</html>
