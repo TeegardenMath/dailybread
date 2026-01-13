@@ -12,12 +12,8 @@ let state = {
 
 const PHASE_1_QUESTIONS = 10;
 const MAX_QUESTIONS = 25;
-const CORS_PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest='
-];
-let currentProxyIndex = 0;
-const FETCH_TIMEOUT = 30000; // 30 seconds
+const CORS_PROXY = 'https://corsproxy.io/?';
+const FETCH_TIMEOUT = 45000; // 45 seconds - AO3 can be slow
 
 // Initialize
 function startQuiz() {
@@ -76,34 +72,52 @@ async function selectPhase2Question() {
   showLoading(true);
 
   try {
-    // Fetch current search results
+    // Fetch works page for the most recent tag
     const searchUrl = buildSearchUrl(state.selectedTags);
     const html = await fetchWithProxy(searchUrl);
 
     // Parse the results
     const parsed = parseSearchResults(html);
-    state.currentFics = parsed.fics;
-    state.estimatedPool = parsed.totalCount;
+
+    // Client-side filter: keep only fics that have ALL selected tags
+    const filteredFics = parsed.fics.filter(fic => {
+      const ficTagsLower = fic.tags.map(t => t.toLowerCase());
+      return state.selectedTags.every(selectedTag =>
+        ficTagsLower.some(ficTag =>
+          ficTag.includes(selectedTag.toLowerCase()) ||
+          selectedTag.toLowerCase().includes(ficTag)
+        )
+      );
+    });
+
+    state.currentFics = filteredFics;
+    state.estimatedPool = filteredFics.length;
 
     // If we're down to a small number, we're done
-    if (parsed.totalCount <= 1 || parsed.fics.length <= 1) {
+    if (filteredFics.length === 0) {
+      // No matches with all tags - use the best match from unfiltered
       showLoading(false);
       return { done: true, fic: parsed.fics[0] };
     }
 
-    // If we have 2-5 fics, let user choose between them by unique tags
-    if (parsed.totalCount <= 5) {
+    if (filteredFics.length === 1) {
       showLoading(false);
-      return selectFinalChoice(parsed.fics);
+      return { done: true, fic: filteredFics[0] };
+    }
+
+    // If we have 2-5 fics, let user choose between them by unique tags
+    if (filteredFics.length <= 5) {
+      showLoading(false);
+      return selectFinalChoice(filteredFics);
     }
 
     // Find distinctive tags across the fics
-    const distinctiveTags = findDistinctiveTags(parsed.fics);
+    const distinctiveTags = findDistinctiveTags(filteredFics);
 
     if (distinctiveTags.length < 2) {
       // Not enough distinctive tags, just pick the first fic
       showLoading(false);
-      return { done: true, fic: parsed.fics[0] };
+      return { done: true, fic: filteredFics[0] };
     }
 
     // Pick two non-overlapping tags
@@ -113,7 +127,7 @@ async function selectPhase2Question() {
     for (let i = 1; i < distinctiveTags.length; i++) {
       const candidate = distinctiveTags[i];
       // Check they don't appear on all the same fics
-      const overlapRatio = calculateOverlap(tagA, candidate, parsed.fics);
+      const overlapRatio = calculateOverlap(tagA, candidate, filteredFics);
       if (overlapRatio < 0.7) {
         tagB = candidate;
         break;
@@ -382,19 +396,21 @@ async function fetchAndShowResult() {
 
 // AO3 fetching and parsing
 function buildSearchUrl(tags) {
-  const tagQuery = tags.map(t => `"${t}"`).join(' ');
-  const params = new URLSearchParams({
-    'work_search[query]': tagQuery,
-    'work_search[sort_column]': 'kudos_count',
-    'work_search[sort_direction]': 'desc',
-    'commit': 'Search'
-  });
-  return `https://archiveofourown.org/works/search?${params.toString()}`;
+  // Use simple tag page URLs (complex query params get blocked by proxies)
+  // We'll filter results client-side for additional tags
+  if (tags.length === 0) {
+    return 'https://archiveofourown.org/works';
+  }
+
+  // Use the most specific/rare tag as the base (last selected is usually most specific)
+  const primaryTag = tags[tags.length - 1];
+  // AO3 uses *s* for slashes in tag URLs
+  const encodedTag = primaryTag.replace(/\//g, '*s*');
+  return `https://archiveofourown.org/tags/${encodeURIComponent(encodedTag)}/works`;
 }
 
 async function fetchWithProxy(url, retryCount = 0) {
-  const proxy = CORS_PROXIES[currentProxyIndex];
-  const proxyUrl = proxy + encodeURIComponent(url);
+  const proxyUrl = CORS_PROXY + encodeURIComponent(url);
 
   try {
     const controller = new AbortController();
@@ -406,11 +422,23 @@ async function fetchWithProxy(url, retryCount = 0) {
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
-    return await response.text();
+
+    const text = await response.text();
+
+    // Check for AO3 rate limit message
+    if (text.includes('Retry later') || text.length < 500) {
+      if (retryCount < 2) {
+        // Wait a bit and retry
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return fetchWithProxy(url, retryCount + 1);
+      }
+      throw new Error('AO3 is rate limiting requests');
+    }
+
+    return text;
   } catch (error) {
-    // Try next proxy
-    if (retryCount < CORS_PROXIES.length - 1) {
-      currentProxyIndex = (currentProxyIndex + 1) % CORS_PROXIES.length;
+    if (retryCount < 2 && error.name === 'AbortError') {
+      // Timeout - retry once
       return fetchWithProxy(url, retryCount + 1);
     }
     throw error;
