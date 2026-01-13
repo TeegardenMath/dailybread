@@ -54,43 +54,53 @@ async function selectNextTagQuestion() {
       return selectFirstQuestion();
     }
 
-    // All subsequent questions: query AO3 with current tags and find valid next options
+    // Fetch fics from the most recent tag's page (simple URL, no query params)
     const searchUrl = buildSearchUrl(state.selectedTags);
     console.log('Fetching from:', searchUrl);
     const html = await fetchWithProxy(searchUrl);
 
     const parsed = parseSearchResults(html);
-    state.currentFics = parsed.fics;
-    state.estimatedPool = parsed.totalCount || parsed.fics.length;
+    console.log(`Fetched ${parsed.fics.length} fics from tag page`);
 
-    console.log(`Found ${parsed.fics.length} fics matching ${state.selectedTags.length} tags`);
+    // Client-side filter: keep only fics that have ALL selected tags
+    const filteredFics = parsed.fics.filter(fic => {
+      const ficTagsLower = fic.tags.map(t => t.toLowerCase());
+      return state.selectedTags.every(selectedTag =>
+        ficTagsLower.some(ficTag => ficTag === selectedTag.toLowerCase())
+      );
+    });
+
+    state.currentFics = filteredFics;
+    state.estimatedPool = filteredFics.length;
+
+    console.log(`After filtering for all ${state.selectedTags.length} tags: ${filteredFics.length} fics`);
 
     // End conditions
-    if (parsed.fics.length === 0) {
-      // No fics found - shouldn't happen if we validate, but handle gracefully
+    if (filteredFics.length === 0) {
+      // No fics in our sample have all tags - ask user to try again
       showLoading(false);
-      showError("No fics found with all those tags. Try again!");
+      showError("No fics found with all those tags in our sample. Try again with different choices!");
       return { done: true, error: true };
     }
 
-    if (parsed.fics.length === 1) {
+    if (filteredFics.length === 1) {
       showLoading(false);
-      return { done: true, fic: parsed.fics[0] };
+      return { done: true, fic: filteredFics[0] };
     }
 
-    if (parsed.fics.length <= 5) {
+    if (filteredFics.length <= 5) {
       showLoading(false);
-      return selectFinalChoice(parsed.fics);
+      return selectFinalChoice(filteredFics);
     }
 
     // Find tags that appear on SOME but not ALL remaining fics
-    const distinctiveTags = findDistinctiveTags(parsed.fics);
+    const distinctiveTags = findDistinctiveTags(filteredFics);
     console.log(`Found ${distinctiveTags.length} distinctive tags`);
 
     if (distinctiveTags.length < 2) {
       // Not enough variety - just pick a fic
       showLoading(false);
-      return { done: true, fic: parsed.fics[0] };
+      return { done: true, fic: filteredFics[0] };
     }
 
     // Pick two tags that don't overlap too much
@@ -99,7 +109,7 @@ async function selectNextTagQuestion() {
 
     for (let i = 1; i < distinctiveTags.length; i++) {
       const candidate = distinctiveTags[i];
-      const overlapRatio = calculateOverlap(tagA, candidate, parsed.fics);
+      const overlapRatio = calculateOverlap(tagA, candidate, filteredFics);
       if (overlapRatio < 0.7) {
         tagB = candidate;
         break;
@@ -377,18 +387,10 @@ function buildSearchUrl(tags) {
     return 'https://archiveofourown.org/works';
   }
 
-  if (tags.length === 1) {
-    // Single tag: use tag page (more reliable)
-    const encodedTag = tags[0].replace(/\//g, '*s*');
-    return `https://archiveofourown.org/tags/${encodeURIComponent(encodedTag)}/works`;
-  }
-
-  // Multiple tags: use the first tag's page with filter
-  // Format: /tags/Tag1/works?work_search[other_tag_names]=Tag2,Tag3
-  const primaryTag = tags[0].replace(/\//g, '*s*');
-  const otherTags = tags.slice(1).join(',');
-
-  return `https://archiveofourown.org/tags/${encodeURIComponent(primaryTag)}/works?work_search%5Bother_tag_names%5D=${encodeURIComponent(otherTags)}`;
+  // Always use simple tag page URL (query params cause proxy issues)
+  // Use the LAST tag (most specific) as the base
+  const primaryTag = tags[tags.length - 1].replace(/\//g, '*s*');
+  return `https://archiveofourown.org/tags/${encodeURIComponent(primaryTag)}/works`;
 }
 
 async function fetchWithProxy(url, proxyIndex = 0) {
