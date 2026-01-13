@@ -1,17 +1,13 @@
 // Quiz state
 let state = {
-  phase: 1,
   questionNumber: 0,
-  selectedTags: [],      // Phase 1 tags (broad categories)
-  phase2Tags: [],        // Phase 2 tags (real tags from fics)
-  usedCategories: [],
+  selectedTags: [],      // All selected tags
   estimatedPool: 15000000,
   currentFics: [],
   finalFic: null,
   lastAction: null
 };
 
-const PHASE_1_QUESTIONS = 5;  // Fewer broad questions = more likely to find matching fics
 const MAX_QUESTIONS = 20;
 // CORS proxy (corsproxy.io works from browsers)
 const CORS_PROXIES = [
@@ -24,11 +20,8 @@ const FETCH_TIMEOUT = 30000; // 30 seconds
 // Initialize
 function startQuiz() {
   state = {
-    phase: 1,
     questionNumber: 0,
     selectedTags: [],
-    phase2Tags: [],
-    usedCategories: [],
     estimatedPool: 15000000,
     currentFics: [],
     finalFic: null,
@@ -50,80 +43,54 @@ function restartQuiz() {
   document.getElementById('progress').style.width = '0%';
 }
 
-// Phase 1: Use curated tags
-function selectPhase1Question() {
-  // Get categories we haven't used recently
-  const recentCategories = state.usedCategories.slice(-3);
-  const availableCategories = CATEGORY_LIST.filter(c => !recentCategories.includes(c));
-
-  // Pick a random category
-  const categoryKey = availableCategories[Math.floor(Math.random() * availableCategories.length)];
-  const category = TAG_CATEGORIES[categoryKey];
-
-  // Get two different tags from this category
-  const shuffled = [...category.tags].sort(() => Math.random() - 0.5);
-  const tagA = shuffled[0];
-  const tagB = shuffled[1];
-
-  state.usedCategories.push(categoryKey);
-
-  return {
-    question: category.question,
-    options: [tagA, tagB],
-    category: categoryKey
-  };
-}
-
-// Phase 2: Use real tags from fetched fics
-// ALL selected tags (Phase 1 + Phase 2) must match the final fic
-async function selectPhase2Question() {
+// Select the next question - queries AO3 after every selection to ensure valid tags
+async function selectNextTagQuestion() {
   showLoading(true);
 
   try {
-    // Fetch fics matching ALL current tags (Phase 1 + Phase 2)
-    const searchUrl = buildSearchUrl(state.selectedTags, state.phase2Tags);
+    // First question: use curated tags to start
+    if (state.selectedTags.length === 0) {
+      showLoading(false);
+      return selectFirstQuestion();
+    }
+
+    // All subsequent questions: query AO3 with current tags and find valid next options
+    const searchUrl = buildSearchUrl(state.selectedTags);
     console.log('Fetching from:', searchUrl);
     const html = await fetchWithProxy(searchUrl);
 
     const parsed = parseSearchResults(html);
-    let workingFics = parsed.fics;
-    console.log(`Found ${workingFics.length} fics matching all ${state.selectedTags.length + state.phase2Tags.length} tags`);
+    state.currentFics = parsed.fics;
+    state.estimatedPool = parsed.totalCount || parsed.fics.length;
 
-    // If no results, we need to handle this - but since we're careful about tag selection, this shouldn't happen often
-    if (workingFics.length === 0 && state.phase2Tags.length > 0) {
-      // Remove last Phase 2 tag and try again
-      console.log('No results, removing last Phase 2 tag and retrying...');
-      state.phase2Tags.pop();
-      showLoading(false);
-      return selectPhase2Question();
-    }
-
-    state.currentFics = workingFics;
-    state.estimatedPool = workingFics.length;
+    console.log(`Found ${parsed.fics.length} fics matching ${state.selectedTags.length} tags`);
 
     // End conditions
-    if (workingFics.length === 0) {
+    if (parsed.fics.length === 0) {
+      // No fics found - shouldn't happen if we validate, but handle gracefully
       showLoading(false);
-      return { done: true, fic: state.currentFics[0] };
+      showError("No fics found with all those tags. Try again!");
+      return { done: true, error: true };
     }
 
-    if (workingFics.length === 1) {
+    if (parsed.fics.length === 1) {
       showLoading(false);
-      return { done: true, fic: workingFics[0] };
+      return { done: true, fic: parsed.fics[0] };
     }
 
-    if (workingFics.length <= 5) {
+    if (parsed.fics.length <= 5) {
       showLoading(false);
-      return selectFinalChoice(workingFics);
+      return selectFinalChoice(parsed.fics);
     }
 
     // Find tags that appear on SOME but not ALL remaining fics
-    const distinctiveTags = findDistinctiveTags(workingFics);
+    const distinctiveTags = findDistinctiveTags(parsed.fics);
     console.log(`Found ${distinctiveTags.length} distinctive tags`);
 
     if (distinctiveTags.length < 2) {
+      // Not enough variety - just pick a fic
       showLoading(false);
-      return { done: true, fic: workingFics[0] };
+      return { done: true, fic: parsed.fics[0] };
     }
 
     // Pick two tags that don't overlap too much
@@ -132,7 +99,7 @@ async function selectPhase2Question() {
 
     for (let i = 1; i < distinctiveTags.length; i++) {
       const candidate = distinctiveTags[i];
-      const overlapRatio = calculateOverlap(tagA, candidate, workingFics);
+      const overlapRatio = calculateOverlap(tagA, candidate, parsed.fics);
       if (overlapRatio < 0.7) {
         tagB = candidate;
         break;
@@ -144,19 +111,38 @@ async function selectPhase2Question() {
     showLoading(false);
 
     return {
-      question: "Which tag calls to you?",
+      question: state.selectedTags.length < 3
+        ? "Which speaks to you more?"
+        : "Which tag calls to you?",
       options: [
         { name: tagA.name, count: tagA.frequency },
         { name: tagB.name, count: tagB.frequency }
-      ],
-      isPhase2: true
+      ]
     };
 
   } catch (error) {
-    console.error('Phase 2 error:', error);
+    console.error('Error selecting question:', error);
     showLoading(false);
     throw error;
   }
+}
+
+// First question uses curated popular tags to get started
+function selectFirstQuestion() {
+  // Pick a random starting category
+  const startingCategories = ['tone', 'romance_trajectory', 'pacing', 'tropes'];
+  const categoryKey = startingCategories[Math.floor(Math.random() * startingCategories.length)];
+  const category = TAG_CATEGORIES[categoryKey];
+
+  // Get two different tags from this category
+  const shuffled = [...category.tags].sort(() => Math.random() - 0.5);
+  const tagA = shuffled[0];
+  const tagB = shuffled[1];
+
+  return {
+    question: category.question,
+    options: [tagA, tagB]
+  };
 }
 
 function selectFinalChoice(fics) {
@@ -301,21 +287,13 @@ async function nextQuestion() {
   updateProgress();
 
   try {
-    let questionData;
-
-    if (state.phase === 1 && state.questionNumber <= PHASE_1_QUESTIONS) {
-      questionData = selectPhase1Question();
-    } else {
-      if (state.phase === 1) {
-        state.phase = 2;
-        await showPhaseTransition();
-      }
-      questionData = await selectPhase2Question();
-    }
+    const questionData = await selectNextTagQuestion();
 
     // Check if we're done
     if (questionData.done) {
-      showResult(questionData.fic);
+      if (!questionData.error) {
+        showResult(questionData.fic);
+      }
       return;
     }
 
@@ -339,28 +317,21 @@ function displayQuestion(data) {
     const btn = document.createElement('button');
     btn.className = 'option-btn';
     btn.textContent = option.name;
-    btn.onclick = () => selectOption(option, data.isFinalChoice, data.isPhase2);
+    btn.onclick = () => selectOption(option, data.isFinalChoice);
     optionsContainer.appendChild(btn);
   }
 }
 
-async function selectOption(option, isFinal, isPhase2) {
+async function selectOption(option, isFinal) {
   if (isFinal && option.fic) {
     // User selected a specific fic
     showResult(option.fic);
     return;
   }
 
-  if (isPhase2) {
-    // Phase 2: add to phase2Tags for filtering
-    state.phase2Tags.push(option.name);
-    console.log('Phase 2 tag selected:', option.name, 'Total:', state.phase2Tags);
-  } else {
-    // Phase 1: add to selectedTags
-    state.selectedTags.push(option.name);
-    const tagRate = (option.count || 500000) / 15000000;
-    state.estimatedPool = Math.round(state.estimatedPool * tagRate);
-  }
+  // Add selected tag
+  state.selectedTags.push(option.name);
+  console.log('Tag selected:', option.name, 'Total tags:', state.selectedTags.length);
 
   // Check if we should end
   if (state.questionNumber >= MAX_QUESTIONS) {
@@ -401,24 +372,21 @@ async function fetchAndShowResult() {
 }
 
 // AO3 fetching and parsing
-function buildSearchUrl(tags, phase2Tags = []) {
-  // Combine all tags for search
-  const allTags = [...tags, ...phase2Tags];
-
-  if (allTags.length === 0) {
+function buildSearchUrl(tags) {
+  if (tags.length === 0) {
     return 'https://archiveofourown.org/works';
   }
 
-  if (allTags.length === 1) {
+  if (tags.length === 1) {
     // Single tag: use tag page (more reliable)
-    const encodedTag = allTags[0].replace(/\//g, '*s*');
+    const encodedTag = tags[0].replace(/\//g, '*s*');
     return `https://archiveofourown.org/tags/${encodeURIComponent(encodedTag)}/works`;
   }
 
   // Multiple tags: use the first tag's page with filter
   // Format: /tags/Tag1/works?work_search[other_tag_names]=Tag2,Tag3
-  const primaryTag = allTags[0].replace(/\//g, '*s*');
-  const otherTags = allTags.slice(1).join(',');
+  const primaryTag = tags[0].replace(/\//g, '*s*');
+  const otherTags = tags.slice(1).join(',');
 
   return `https://archiveofourown.org/tags/${encodeURIComponent(primaryTag)}/works?work_search%5Bother_tag_names%5D=${encodeURIComponent(otherTags)}`;
 }
@@ -602,13 +570,9 @@ async function showPhaseTransition() {
 
 function updatePhaseIndicator() {
   const indicator = document.getElementById('phase-indicator');
-  if (state.phase === 1) {
-    indicator.textContent = `~${formatNumber(state.estimatedPool)} fics remaining`;
-  } else {
-    indicator.textContent = state.estimatedPool > 0
-      ? `${formatNumber(state.estimatedPool)} fics remaining`
-      : 'Searching the Archive...';
-  }
+  indicator.textContent = state.estimatedPool > 0
+    ? `${formatNumber(state.estimatedPool)} fics remaining`
+    : 'Searching the Archive...';
 }
 
 function formatNumber(num) {
@@ -658,13 +622,11 @@ function showResult(fic) {
     addMetaItem(metaContainer, fic.chapters + ' chapters');
   }
 
-  // Selected tags (ALL tags the user chose - Phase 1 + Phase 2)
+  // Selected tags (all tags the user chose)
   const selectedTagsContainer = document.getElementById('selected-tags');
   selectedTagsContainer.innerHTML = '';
 
-  // Show ALL selected tags - the fic should match all of them
-  const allSelectedTags = [...state.selectedTags, ...state.phase2Tags];
-  for (const tag of allSelectedTags) {
+  for (const tag of state.selectedTags) {
     const tagEl = document.createElement('span');
     tagEl.className = 'tag selected';
     tagEl.textContent = tag;
@@ -676,7 +638,7 @@ function showResult(fic) {
   otherTagsContainer.innerHTML = '';
 
   const otherTags = fic.tags.filter(t =>
-    !allSelectedTags.some(sel => sel.toLowerCase() === t.toLowerCase())
+    !state.selectedTags.some(sel => sel.toLowerCase() === t.toLowerCase())
   ).slice(0, 10);
   for (const tag of otherTags) {
     const tagEl = document.createElement('span');
